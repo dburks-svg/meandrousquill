@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dragon's Eggs and Spirit Stones – A Novel by Deborah Burks</title>
+    <meta name="description" content="Dragon's Eggs and Spirit Stones, a high fantasy novel by Deborah Burks. Read free online at meandrousquill.com. A story of runestones, dragons, and honor.">
+    <meta property="og:title" content="Dragon's Eggs and Spirit Stones">
+    <meta property="og:description" content="A high fantasy novel by Deborah Burks. Read free online.">
+    <meta property="og:type" content="book">
+    <meta property="og:site_name" content="Meandrous Quill">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Cinzel:wght@400;500;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-void: #0a0806;
+            --bg-deep: #1a1410;
+            --text-primary: #e8dcc8;
+            --text-secondary: #b8a890;
+            --text-faint: #7a6e5e;
+            --accent-gold: #c9a84c;
+            --accent-glow: #e8c86a;
+            --accent-amber: #d4883a;
+            --accent-ember: #8b4513;
+            --accent-fire: #c4622a;
+            --font-display: 'Cinzel Decorative', 'Cinzel', serif;
+            --font-heading: 'Cinzel', serif;
+            --font-body: 'Crimson Text', Georgia, serif;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--bg-void);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ---- Particle Canvas ---- */
+        #ember-canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ---- Atmospheric Layers ---- */
+        .atmo {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .atmo-vignette {
+            background: radial-gradient(
+                ellipse 80% 70% at 50% 50%,
+                transparent 0%,
+                rgba(10, 8, 6, 0.3) 50%,
+                rgba(10, 8, 6, 0.85) 100%
+            );
+        }
+
+        .atmo-glow {
+            opacity: 0;
+            animation: glowReveal 4s ease-out 0.5s forwards;
+            background:
+                radial-gradient(ellipse 40% 35% at 50% 42%, rgba(201, 168, 76, 0.06) 0%, transparent 100%),
+                radial-gradient(ellipse 60% 50% at 50% 45%, rgba(212, 136, 58, 0.03) 0%, transparent 100%);
+        }
+
+        .atmo-moon {
+            opacity: 0;
+            animation: moonReveal 6s ease-out 1s forwards;
+            background:
+                radial-gradient(circle 80px at 78% 12%, rgba(232, 216, 180, 0.04) 0%, transparent 100%),
+                radial-gradient(circle 40px at 78% 12%, rgba(232, 216, 180, 0.06) 0%, transparent 100%);
+        }
+
+        /* ---- Main Content ---- */
+        .landing-scene {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+
+        /* ---- Runic Ornament (top) ---- */
+        .rune-ornament {
+            opacity: 0;
+            animation: fadeUp 2s ease-out 1.2s forwards;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .rune-ornament svg {
+            width: 120px;
+            height: 20px;
+        }
+
+        .rune-ornament .rune-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(201, 168, 76, 0.6);
+            animation: runeGlowPulse 3s ease-in-out infinite;
+        }
+
+        .rune-line {
+            stroke: var(--accent-gold);
+            stroke-width: 1;
+            opacity: 0.4;
+            stroke-dasharray: 4 6;
+        }
+
+        .rune-glyph {
+            fill: none;
+            stroke: var(--accent-gold);
+            stroke-width: 1.2;
+            opacity: 0.5;
+            filter: drop-shadow(0 0 3px rgba(201, 168, 76, 0.4));
+        }
+
+        /* ---- Title ---- */
+        .landing-title {
+            font-family: var(--font-display);
+            font-weight: 400;
+            font-size: clamp(1.8rem, 5.5vw, 3.8rem);
+            color: var(--accent-gold);
+            letter-spacing: 0.06em;
+            line-height: 1.15;
+            opacity: 0;
+            animation: titleReveal 3s ease-out 1.6s forwards;
+            text-shadow:
+                0 0 40px rgba(201, 168, 76, 0.15),
+                0 0 80px rgba(201, 168, 76, 0.05);
+            max-width: 14em;
+        }
+
+        .landing-title .amp {
+            display: block;
+            font-size: 0.45em;
+            color: var(--accent-ember);
+            letter-spacing: 0.3em;
+            margin: 0.3em 0 0.1em;
+            font-family: var(--font-heading);
+        }
+
+        /* ---- Subtitle ---- */
+        .landing-subtitle {
+            font-family: var(--font-heading);
+            font-size: clamp(0.75rem, 1.8vw, 1rem);
+            font-weight: 400;
+            color: var(--text-faint);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            margin-top: 1.5rem;
+            opacity: 0;
+            animation: fadeUp 2s ease-out 2.6s forwards;
+        }
+
+        /* ---- Divider ---- */
+        .landing-divider {
+            margin: 2.5rem 0;
+            opacity: 0;
+            animation: fadeUp 2s ease-out 3s forwards;
+        }
+
+        .landing-divider svg {
+            width: 200px;
+            height: 24px;
+        }
+
+        .divider-line {
+            stroke: var(--accent-ember);
+            stroke-width: 0.8;
+            opacity: 0.5;
+        }
+
+        .divider-diamond {
+            fill: var(--accent-gold);
+            opacity: 0.6;
+            filter: drop-shadow(0 0 4px rgba(201, 168, 76, 0.5));
+        }
+
+        /* ---- Epigraph ---- */
+        .landing-epigraph {
+            font-family: var(--font-body);
+            font-style: italic;
+            font-size: clamp(0.95rem, 2vw, 1.15rem);
+            color: var(--text-secondary);
+            max-width: 26em;
+            line-height: 1.7;
+            opacity: 0;
+            animation: fadeUp 2.5s ease-out 3.4s forwards;
+        }
+
+        .landing-epigraph .quote-mark {
+            font-family: var(--font-heading);
+            font-style: normal;
+            font-size: 1.6em;
+            color: var(--accent-ember);
+            vertical-align: -0.15em;
+            margin-right: 0.05em;
+        }
+
+        /* ---- CTA ---- */
+        .landing-cta {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: fadeUp 2s ease-out 4.2s forwards;
+        }
+
+        .btn-begin {
+            display: inline-block;
+            font-family: var(--font-heading);
+            font-size: clamp(0.85rem, 1.5vw, 1rem);
+            font-weight: 500;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            background: transparent;
+            padding: 1rem 3rem;
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            cursor: pointer;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .btn-begin::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(201, 168, 76, 0.08), rgba(212, 136, 58, 0.05));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+
+        .btn-begin::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 1px;
+            background: var(--accent-gold);
+            transition: width 0.4s ease;
+        }
+
+        .btn-begin:hover {
+            color: var(--accent-glow);
+            border-color: rgba(201, 168, 76, 0.5);
+            box-shadow: 0 0 30px rgba(201, 168, 76, 0.08);
+        }
+
+        .btn-begin:hover::before {
+            opacity: 1;
+        }
+
+        .btn-begin:hover::after {
+            width: 60%;
+        }
+
+        .btn-begin:focus-visible {
+            outline: 2px solid var(--accent-gold);
+            outline-offset: 4px;
+        }
+
+        /* ---- Nav Links ---- */
+        .landing-nav {
+            margin-top: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            opacity: 0;
+            animation: fadeUp 2s ease-out 4.8s forwards;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .landing-nav a {
+            font-family: var(--font-heading);
+            font-size: 0.7rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--text-faint);
+            text-decoration: none;
+            padding: 0.4rem 0.8rem;
+            transition: color 0.3s ease;
+        }
+
+        .landing-nav a:hover {
+            color: var(--accent-gold);
+        }
+
+        .landing-nav a:focus-visible {
+            outline: 1px solid var(--accent-gold);
+            outline-offset: 2px;
+        }
+
+        .nav-sep {
+            color: var(--accent-ember);
+            opacity: 0.3;
+            font-size: 0.6rem;
+            user-select: none;
+        }
+
+        /* ---- Memorial ---- */
+        .landing-memorial {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-family: var(--font-body);
+            font-style: italic;
+            font-size: 0.8rem;
+            color: var(--accent-ember);
+            opacity: 0;
+            animation: fadeUp 2s ease-out 5.4s forwards;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* ---- Bottom rune ornament ---- */
+        .rune-ornament-bottom {
+            margin-top: 3rem;
+            opacity: 0;
+            animation: fadeUp 2s ease-out 5s forwards;
+        }
+
+        .rune-ornament-bottom svg {
+            width: 60px;
+            height: 40px;
+            opacity: 0.25;
+        }
+
+        /* ---- Keyframes ---- */
+        @keyframes glowReveal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes moonReveal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes titleReveal {
+            0% {
+                opacity: 0;
+                transform: translateY(8px);
+                filter: blur(4px);
+                text-shadow: 0 0 60px rgba(201, 168, 76, 0.3);
+            }
+            60% {
+                filter: blur(0);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+                filter: blur(0);
+                text-shadow: 0 0 40px rgba(201, 168, 76, 0.15), 0 0 80px rgba(201, 168, 76, 0.05);
+            }
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes runeGlowPulse {
+            0%, 100% {
+                box-shadow: 0 0 6px rgba(201, 168, 76, 0.4);
+                opacity: 0.6;
+            }
+            50% {
+                box-shadow: 0 0 14px rgba(201, 168, 76, 0.8);
+                opacity: 1;
+            }
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 600px) {
+            .landing-scene {
+                padding: 1.5rem 1rem;
+            }
+            .rune-ornament svg {
+                width: 80px;
+            }
+            .landing-divider svg {
+                width: 140px;
+            }
+            .landing-nav {
+                gap: 0.2rem;
+            }
+            .landing-nav a {
+                font-size: 0.65rem;
+                padding: 0.3rem 0.5rem;
+            }
+            .btn-begin {
+                padding: 0.85rem 2rem;
+            }
+        }
+
+        /* ---- Reduced Motion ---- */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-delay: 0ms !important;
+                transition-duration: 0.01ms !important;
+            }
+            .atmo-glow, .atmo-moon,
+            .rune-ornament, .landing-title,
+            .landing-subtitle, .landing-divider,
+            .landing-epigraph, .landing-cta,
+            .landing-nav, .landing-memorial,
+            .rune-ornament-bottom {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+            }
+            .rune-ornament .rune-dot {
+                animation: none !important;
+                opacity: 0.6;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle layer -->
+    <canvas id="ember-canvas" aria-hidden="true"></canvas>
+
+    <!-- Atmospheric layers -->
+    <div class="atmo atmo-glow" aria-hidden="true"></div>
+    <div class="atmo atmo-moon" aria-hidden="true"></div>
+    <div class="atmo atmo-vignette" aria-hidden="true"></div>
+
+    <!-- Main Content -->
+    <main class="landing-scene">
+
+        <!-- Top runic ornament -->
+        <div class="rune-ornament" aria-hidden="true">
+            <svg viewBox="0 0 120 20" fill="none">
+                <line x1="0" y1="10" x2="35" y2="10" class="rune-line"/>
+                <path d="M40 3 L45 10 L40 17 M50 3 L45 10 L50 17" class="rune-glyph"/>
+                <line x1="55" y1="10" x2="65" y2="10" class="rune-line"/>
+                <path d="M70 3 L75 10 L70 17 M80 3 L75 10 L80 17" class="rune-glyph"/>
+                <line x1="85" y1="10" x2="120" y2="10" class="rune-line"/>
+            </svg>
+            <div class="rune-dot"></div>
+            <svg viewBox="0 0 120 20" fill="none" style="transform: scaleX(-1)">
+                <line x1="0" y1="10" x2="35" y2="10" class="rune-line"/>
+                <path d="M40 3 L45 10 L40 17 M50 3 L45 10 L50 17" class="rune-glyph"/>
+                <line x1="55" y1="10" x2="65" y2="10" class="rune-line"/>
+                <path d="M70 3 L75 10 L70 17 M80 3 L75 10 L80 17" class="rune-glyph"/>
+                <line x1="85" y1="10" x2="120" y2="10" class="rune-line"/>
+            </svg>
+        </div>
+
+        <h1 class="landing-title">
+            Dragon's Eggs
+            <span class="amp">&amp;</span>
+            Spirit Stones
+        </h1>
+
+        <p class="landing-subtitle">A Novel by Deborah Burks</p>
+
+        <!-- Ornamental divider -->
+        <div class="landing-divider" aria-hidden="true">
+            <svg viewBox="0 0 200 24" fill="none">
+                <line x1="0" y1="12" x2="85" y2="12" class="divider-line"/>
+                <rect x="93" y="6" width="14" height="14" rx="1" transform="rotate(45 100 12)" class="divider-diamond"/>
+                <line x1="115" y1="12" x2="200" y2="12" class="divider-line"/>
+            </svg>
+        </div>
+
+        <p class="landing-epigraph">
+            <span class="quote-mark">"</span>The token given must be reclaimed,<br>
+            for the boon required will now be named.<span class="quote-mark">"</span>
+        </p>
+
+        <div class="landing-cta">
+            <a href="chapters/chapter-01.html" class="btn-begin" id="begin-reading">Begin Reading</a>
+        </div>
+
+        <nav class="landing-nav" aria-label="Site navigation">
+            <a href="table-of-contents.html">Contents</a>
+            <span class="nav-sep">&#9671;</span>
+            <a href="map.html">Map</a>
+            <span class="nav-sep">&#9671;</span>
+            <a href="dedication.html">Dedication</a>
+            <span class="nav-sep">&#9671;</span>
+            <a href="about.html">About the Author</a>
+        </nav>
+
+        <!-- Bottom ornament -->
+        <div class="rune-ornament-bottom" aria-hidden="true">
+            <svg viewBox="0 0 60 40" fill="none">
+                <path d="M30 5 L10 20 L30 35 L50 20 Z" stroke="currentColor" stroke-width="0.8" fill="none" style="color: var(--accent-ember)"/>
+                <path d="M30 12 L20 20 L30 28 L40 20 Z" stroke="currentColor" stroke-width="0.5" fill="none" style="color: var(--accent-gold); opacity: 0.4"/>
+                <circle cx="30" cy="20" r="2" fill="var(--accent-gold)" opacity="0.3"/>
+            </svg>
+        </div>
+    </main>
+
+    <!-- Memorial -->
+    <p class="landing-memorial">Shared freely, in loving memory</p>
+
+    <!-- Continue Reading logic -->
+    <script>
+    (function() {
+        var data = localStorage.getItem('mq-progress');
+        if (data) {
+            try {
+                var progress = JSON.parse(data);
+                if (progress.currentChapter) {
+                    var btn = document.getElementById('begin-reading');
+                    var ch = String(progress.currentChapter).padStart(2, '0');
+                    btn.href = 'chapters/chapter-' + ch + '.html';
+                    var scrollPct = (progress.scrollPositions || {})[progress.currentChapter];
+                    var label = 'Continue Reading – Chapter ' + progress.currentChapter;
+                    if (scrollPct && scrollPct > 0.02 && scrollPct < 0.98) {
+                        label += ' (' + Math.round(scrollPct * 100) + '% read)';
+                    }
+                    btn.textContent = label;
+                }
+            } catch(e) {}
+        }
+    })();
+    </script>
+
+    <!-- Ember Particle System -->
+    <script>
+    (function() {
+        var canvas = document.getElementById('ember-canvas');
+        if (!canvas) return;
+
+        var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReduced) return;
+
+        var ctx = canvas.getContext('2d');
+        var particles = [];
+        var W, H;
+
+        function resize() {
+            W = canvas.width = window.innerWidth;
+            H = canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        function Particle() {
+            this.reset();
+            this.y = Math.random() * H;
+        }
+
+        Particle.prototype.reset = function() {
+            this.x = Math.random() * W;
+            this.y = H + 10;
+            this.size = Math.random() * 2.5 + 0.5;
+            this.speedY = -(Math.random() * 0.4 + 0.15);
+            this.speedX = (Math.random() - 0.5) * 0.3;
+            this.opacity = Math.random() * 0.5 + 0.1;
+            this.maxOpacity = this.opacity;
+            this.wobbleSpeed = Math.random() * 0.02 + 0.005;
+            this.wobbleAmp = Math.random() * 30 + 10;
+            this.wobbleOffset = Math.random() * Math.PI * 2;
+            this.life = 0;
+            this.maxLife = (H / Math.abs(this.speedY)) + Math.random() * 200;
+
+            var type = Math.random();
+            if (type < 0.6) {
+                this.r = 201; this.g = 168; this.b = 76;
+            } else if (type < 0.85) {
+                this.r = 212; this.g = 136; this.b = 58;
+            } else {
+                this.r = 232; this.g = 200; this.b = 150;
+            }
+        };
+
+        Particle.prototype.update = function() {
+            this.life++;
+            this.y += this.speedY;
+            this.x += this.speedX + Math.sin(this.life * this.wobbleSpeed + this.wobbleOffset) * 0.2;
+
+            var lifePct = this.life / this.maxLife;
+            if (lifePct < 0.1) {
+                this.opacity = this.maxOpacity * (lifePct / 0.1);
+            } else if (lifePct > 0.7) {
+                this.opacity = this.maxOpacity * (1 - (lifePct - 0.7) / 0.3);
+            } else {
+                this.opacity = this.maxOpacity;
+            }
+
+            if (this.y < -20 || this.life > this.maxLife) {
+                this.reset();
+            }
+        };
+
+        Particle.prototype.draw = function(ctx) {
+            if (this.opacity <= 0) return;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + this.opacity + ')';
+            ctx.fill();
+
+            if (this.size > 1.2) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + (this.opacity * 0.1) + ')';
+                ctx.fill();
+            }
+        };
+
+        var count = Math.min(Math.floor(W * H / 12000), 80);
+        for (var i = 0; i < count; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, W, H);
+            for (var i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw(ctx);
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    })();
+    </script>
+</body>
+</html>

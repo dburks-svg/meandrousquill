@@ -1,0 +1,660 @@
+:root {
+  --bg-deep: #1a1410;
+  --bg-page: #2a2218;
+  --bg-surface: #3a3028;
+  --text-primary: #e8dcc8;
+  --text-secondary: #b8a890;
+  --accent-gold: #c9a84c;
+  --accent-amber: #d4883a;
+  --accent-ember: #8b4513;
+  --border: #4a3c2e;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --font-body: 'Crimson Text', Georgia, 'Times New Roman', serif;
+  --font-heading: 'Cinzel', 'Palatino Linotype', serif;
+  --reading-width: 38em;
+  --base-size: 1.15rem;
+}
+
+body.font-sm { --base-size: 1rem; }
+body.font-lg { --base-size: 1.35rem; }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size: var(--base-size);
+  line-height: 1.8;
+  color: var(--text-primary);
+  background-color: var(--bg-deep);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent-gold);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-amber);
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Skip to content */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  background: var(--accent-gold);
+  color: var(--bg-deep);
+  padding: 0.5rem 1rem;
+  border-radius: 0 0 4px 4px;
+  z-index: 1000;
+  font-family: var(--font-body);
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+/* ---- Reading Progress Bar ---- */
+#reading-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--accent-gold), var(--accent-amber));
+  z-index: 999;
+  transition: width 0.1s ease-out;
+}
+
+/* ---- Site Header ---- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem;
+  background: var(--bg-deep);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(8px);
+}
+
+.site-header .book-title {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  color: var(--accent-gold);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.header-nav a {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.header-nav a:hover {
+  color: var(--accent-gold);
+}
+
+#bookmark-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.2s, transform 0.2s;
+}
+
+#bookmark-toggle:hover {
+  color: var(--accent-gold);
+}
+
+#bookmark-toggle.bookmarked {
+  color: var(--accent-gold);
+}
+
+#bookmark-toggle.bookmarked svg {
+  fill: var(--accent-gold);
+  filter: drop-shadow(0 0 4px rgba(201, 168, 76, 0.4));
+}
+
+#bookmark-toggle:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+#font-size-toggle {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+#font-size-toggle:hover {
+  color: var(--accent-gold);
+  border-color: var(--accent-gold);
+}
+
+/* ---- Chapter Content ---- */
+.chapter-content {
+  max-width: var(--reading-width);
+  margin: 0 auto;
+  padding: 3rem 1.5rem 2rem;
+}
+
+.chapter-heading {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  font-weight: 400;
+  color: var(--accent-gold);
+  text-align: center;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.08em;
+}
+
+.chapter-heading::after {
+  content: '✦';
+  display: block;
+  font-size: 1rem;
+  color: var(--accent-ember);
+  margin-top: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.chapter-text p {
+  text-indent: 1.5em;
+  margin-bottom: 0;
+}
+
+.chapter-text p:first-child {
+  text-indent: 0;
+}
+
+.chapter-text p:first-child::first-letter {
+  font-family: var(--font-heading);
+  font-size: 3.2em;
+  float: left;
+  line-height: 0.8;
+  padding-right: 0.08em;
+  padding-top: 0.05em;
+  color: var(--accent-gold);
+}
+
+.chapter-text em {
+  font-style: italic;
+  color: #d4c4a8;
+}
+
+/* Scene break */
+.scene-break {
+  border: none;
+  text-align: center;
+  margin: 2rem 0;
+  overflow: visible;
+}
+
+.scene-break::before {
+  content: '◆\2003\25C6\2003\25C6';
+  color: var(--accent-ember);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+}
+
+/* ---- Chapter Navigation ---- */
+.chapter-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: var(--reading-width);
+  margin: 2rem auto 0;
+  padding: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.chapter-nav a {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  padding: 0.5rem 0;
+}
+
+.chapter-nav a:hover {
+  color: var(--accent-gold);
+}
+
+.nav-prev,
+.nav-next {
+  min-width: 8em;
+}
+
+.nav-prev {
+  text-align: left;
+}
+
+.nav-next {
+  text-align: right;
+}
+
+.nav-toc {
+  text-align: center;
+}
+
+.nav-prev.hidden,
+.nav-next.hidden {
+  visibility: hidden;
+}
+
+/* ---- Footer ---- */
+.site-footer {
+  text-align: center;
+  padding: 2rem 1.5rem 3rem;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+  max-width: var(--reading-width);
+  margin: 2rem auto 0;
+}
+
+.site-footer p + p {
+  margin-top: 0.3rem;
+  font-style: italic;
+  color: var(--accent-ember);
+}
+
+/* ---- Landing Page ---- */
+.landing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.landing-title {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  color: var(--accent-gold);
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+
+.landing-subtitle {
+  font-family: var(--font-heading);
+  font-size: clamp(0.85rem, 2vw, 1.1rem);
+  font-weight: 400;
+  color: var(--text-secondary);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 2.5rem;
+}
+
+.landing-ornament {
+  color: var(--accent-ember);
+  font-size: 1.2rem;
+  margin-bottom: 2rem;
+  letter-spacing: 0.5em;
+}
+
+.landing-epigraph {
+  font-style: italic;
+  color: var(--text-secondary);
+  max-width: 28em;
+  margin-bottom: 3rem;
+  line-height: 1.6;
+  font-size: 1.05rem;
+}
+
+.landing-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-primary {
+  display: inline-block;
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  color: var(--bg-deep);
+  background: var(--accent-gold);
+  padding: 0.85rem 2.5rem;
+  border-radius: 3px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  background: var(--accent-amber);
+  color: var(--bg-deep);
+  transform: translateY(-1px);
+}
+
+.landing-links {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.landing-links a {
+  color: var(--text-secondary);
+}
+
+.landing-memorial {
+  margin-top: 4rem;
+  font-size: 0.85rem;
+  color: var(--accent-ember);
+  font-style: italic;
+}
+
+/* ---- Table of Contents ---- */
+.toc-page {
+  max-width: var(--reading-width);
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.toc-page h1 {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  color: var(--accent-gold);
+  text-align: center;
+  margin-bottom: 2.5rem;
+  letter-spacing: 0.08em;
+}
+
+.toc-continue {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.toc-list {
+  list-style: none;
+  max-width: 24em;
+  margin: 0 auto;
+}
+
+.toc-list li {
+  border-bottom: 1px solid var(--border);
+}
+
+.toc-list li:last-child {
+  border-bottom: none;
+}
+
+.toc-list a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.7rem 0.5rem;
+  color: var(--text-primary);
+  transition: color 0.2s, padding-left 0.2s;
+}
+
+.toc-list a:hover {
+  color: var(--accent-gold);
+  padding-left: 1rem;
+}
+
+.toc-list .chapter-status {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.toc-list .chapter-status.read {
+  color: #6a9f5c;
+}
+
+.toc-list .chapter-status.current {
+  color: var(--accent-gold);
+}
+
+.toc-list .chapter-status.bookmarked {
+  color: var(--accent-gold);
+}
+
+.toc-list .bookmark-indicator {
+  font-size: 0.75rem;
+  color: var(--accent-gold);
+  margin-left: auto;
+  padding: 0 0.3rem;
+  opacity: 0.7;
+}
+
+.toc-list a {
+  gap: 0.5rem;
+}
+
+/* ---- Dedication & About Pages ---- */
+.prose-page {
+  max-width: var(--reading-width);
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+  text-align: center;
+}
+
+.prose-page h1 {
+  font-family: var(--font-heading);
+  font-size: 1.8rem;
+  color: var(--accent-gold);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.08em;
+}
+
+.prose-page h1::after {
+  content: '✦';
+  display: block;
+  font-size: 1rem;
+  color: var(--accent-ember);
+  margin-top: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.prose-page p {
+  text-align: left;
+  margin-bottom: 1.2rem;
+  line-height: 1.8;
+}
+
+.prose-page .centered {
+  text-align: center;
+}
+
+.prose-page .author-photo {
+  max-width: 280px;
+  border-radius: 4px;
+  border: 2px solid var(--border);
+  margin: 2rem auto;
+  display: block;
+}
+
+.prose-page blockquote {
+  font-style: italic;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--accent-ember);
+  padding-left: 1.5rem;
+  margin: 2rem 0;
+  text-align: left;
+}
+
+.prose-nav {
+  margin-top: 3rem;
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  font-size: 0.95rem;
+}
+
+/* ---- Map Page ---- */
+.map-page {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.map-page h1 {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  color: var(--accent-gold);
+  margin-bottom: 2rem;
+  letter-spacing: 0.08em;
+}
+
+.map-frame {
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  padding: 3rem 2rem;
+  background: var(--bg-page);
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-frame img {
+  max-width: 100%;
+  height: auto;
+  cursor: zoom-in;
+}
+
+.map-placeholder-text {
+  color: var(--text-secondary);
+  font-style: italic;
+  font-size: 1rem;
+  max-width: 30em;
+  line-height: 1.6;
+}
+
+.map-placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.4;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+  .site-header {
+    padding: 0.6rem 1rem;
+  }
+
+  .site-header .book-title {
+    font-size: 0.8rem;
+  }
+
+  .chapter-content {
+    padding: 2rem 1.25rem 1.5rem;
+  }
+
+  .chapter-heading {
+    font-size: 1.5rem;
+  }
+
+  .chapter-text p:first-child::first-letter {
+    font-size: 2.6em;
+  }
+
+  .chapter-nav {
+    padding: 1rem;
+    font-size: 0.85rem;
+  }
+
+  .landing-links {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .chapter-content {
+    padding: 1.5rem 1rem 1rem;
+  }
+
+  .chapter-heading {
+    font-size: 1.3rem;
+  }
+
+  .site-header .book-title {
+    font-size: 0.75rem;
+    max-width: 55%;
+  }
+
+  .header-nav {
+    gap: 0.75rem;
+  }
+}
+
+/* ---- Reduced Motion ---- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0s !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ---- Light Mode Override ---- */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-deep: #f5f0e8;
+    --bg-page: #faf7f2;
+    --bg-surface: #ede8df;
+    --text-primary: #2a2218;
+    --text-secondary: #5c5245;
+    --accent-gold: #8b6914;
+    --accent-amber: #a0642a;
+    --accent-ember: #b08050;
+    --border: #d4cbbf;
+    --shadow: rgba(0, 0, 0, 0.1);
+  }
+
+  .chapter-text em {
+    color: #3a3028;
+  }
+}
