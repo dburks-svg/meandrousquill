@@ -222,20 +222,7 @@ a:focus-visible {
   color: #d4c4a8;
 }
 
-/* Scene break */
-.scene-break {
-  border: none;
-  text-align: center;
-  margin: 2rem 0;
-  overflow: visible;
-}
-
-.scene-break::before {
-  content: '◆\2003\25C6\2003\25C6';
-  color: var(--accent-ember);
-  font-size: 0.7rem;
-  letter-spacing: 0.3em;
-}
+/* Scene break (styled in Enhanced Scene Breaks section below) */
 
 /* ---- Chapter Navigation ---- */
 .chapter-nav {
@@ -637,6 +624,92 @@ a:focus-visible {
   html {
     scroll-behavior: auto;
   }
+}
+
+/* ---- Audio Player Container ---- */
+.audio-player-container {
+  max-width: var(--reading-width);
+  margin: -0.5rem auto 1.5rem;
+  padding: 0 1.5rem;
+  min-height: 90px; /* reserve the iframe height to avoid a reflow on load */
+}
+
+/* ---- Enhanced Scene Breaks ---- */
+.scene-break {
+  border: none;
+  text-align: center;
+  margin: 2.5rem auto;
+  height: 1.5rem;
+  overflow: visible;
+  position: relative;
+  max-width: 240px;
+}
+
+.scene-break::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--accent-ember) 20%, var(--accent-ember) 80%, transparent);
+}
+
+.scene-break::before {
+  content: '✦';
+  position: relative;
+  z-index: 1;
+  color: var(--accent-gold);
+  font-size: 0.8rem;
+  background: var(--bg-deep);
+  padding: 0 1rem;
+  letter-spacing: 0;
+}
+
+@media (prefers-color-scheme: light) {
+  .scene-break::before {
+    background: var(--bg-page);
+  }
+}
+
+/* ---- Atmospheric Background ---- */
+.chapter-content::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 15% 50%, rgba(201, 168, 76, 0.025), transparent 60%),
+    radial-gradient(ellipse at 85% 30%, rgba(212, 136, 58, 0.02), transparent 50%),
+    radial-gradient(ellipse at 50% 90%, rgba(139, 69, 19, 0.03), transparent 60%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ---- Enhanced Chapter Heading ---- */
+.chapter-heading::before {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 1px;
+  margin: 0 auto 1.5rem;
+  background: linear-gradient(to right, transparent, var(--accent-ember), transparent);
+}
+
+/* ---- Enhanced Chapter Navigation Footer ---- */
+.chapter-nav {
+  position: relative;
+}
+
+.chapter-nav::before {
+  content: '✦';
+  position: absolute;
+  top: -0.5em;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: var(--accent-ember);
+  background: var(--bg-deep);
+  padding: 0 0.75rem;
 }
 
 /* ---- Light Mode Override ---- */

@@ -3,7 +3,8 @@
 
   var STORAGE_KEY = 'mq-progress';
   var FONT_KEY = 'mq-font-size';
-  var TOTAL_CHAPTERS = 48;
+
+  // ---- Storage Helpers ----
 
   function getProgress() {
     try {
@@ -19,18 +20,17 @@
   }
 
   function saveProgress(progress) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
-    } catch (e) {}
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(progress)); }
+    catch (e) {}
   }
+
+  // ---- Chapter Detection ----
 
   var chapterEl = document.querySelector('[data-chapter]');
   var chapterNum = chapterEl ? parseInt(chapterEl.getAttribute('data-chapter'), 10) : null;
 
-  // ---- Track current chapter & restore scroll position ----
   if (chapterNum) {
     var progress = getProgress();
-
     if (progress.currentChapter && progress.currentChapter !== chapterNum) {
       if (progress.chaptersRead.indexOf(progress.currentChapter) === -1) {
         progress.chaptersRead.push(progress.currentChapter);
@@ -38,27 +38,31 @@
     }
     progress.currentChapter = chapterNum;
     saveProgress(progress);
+  }
 
-    var savedScroll = progress.scrollPositions[chapterNum];
-    if (savedScroll && savedScroll > 0) {
+  // ---- Restore scroll position ----
+
+  if (chapterNum) {
+    var p0 = getProgress();
+    var saved = p0.scrollPositions[chapterNum];
+    if (saved && saved > 0) {
       requestAnimationFrame(function () {
-        var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-        window.scrollTo(0, savedScroll * docHeight);
+        var docH = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        window.scrollTo(0, saved * docH);
       });
-    } else {
-      window.scrollTo(0, 0);
     }
   }
 
   // ---- Auto-save scroll position (throttled) ----
+
   if (chapterNum) {
-    var scrollSaveTimer = null;
+    var scrollTimer = null;
     window.addEventListener('scroll', function () {
-      if (scrollSaveTimer) clearTimeout(scrollSaveTimer);
-      scrollSaveTimer = setTimeout(function () {
-        var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-        var pct = docHeight > 0 ? scrollTop / docHeight : 0;
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(function () {
+        var top = window.pageYOffset || document.documentElement.scrollTop;
+        var docH = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var pct = docH > 0 ? top / docH : 0;
         var p = getProgress();
         p.scrollPositions[chapterNum] = Math.round(pct * 10000) / 10000;
         saveProgress(p);
@@ -66,17 +70,18 @@
     });
   }
 
-  // ---- Scroll progress bar ----
-  var progressBar = document.getElementById('reading-progress-bar');
-  if (progressBar) {
+  // ---- Reading progress bar ----
+
+  var bar = document.getElementById('reading-progress-bar');
+  if (bar) {
     var ticking = false;
     window.addEventListener('scroll', function () {
       if (!ticking) {
         requestAnimationFrame(function () {
-          var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-          var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-          var pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-          progressBar.style.width = Math.min(pct, 100) + '%';
+          var top = window.pageYOffset || document.documentElement.scrollTop;
+          var docH = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+          var pct = docH > 0 ? (top / docH) * 100 : 0;
+          bar.style.width = Math.min(pct, 100) + '%';
           ticking = false;
         });
         ticking = true;
@@ -84,11 +89,12 @@
     });
   }
 
-  // ---- Bookmark button ----
+  // ---- Bookmark Button ----
+
   var bookmarkBtn = document.getElementById('bookmark-toggle');
   if (bookmarkBtn && chapterNum) {
-    var p = getProgress();
-    var isBookmarked = p.bookmarks.indexOf(chapterNum) !== -1;
+    var bp = getProgress();
+    var isBookmarked = bp.bookmarks.indexOf(chapterNum) !== -1;
     updateBookmarkUI(isBookmarked);
 
     bookmarkBtn.addEventListener('click', function () {
@@ -114,10 +120,10 @@
     bookmarkBtn.title = active ? 'Remove bookmark' : 'Bookmark this chapter';
   }
 
-  // ---- Keyboard navigation ----
+  // ---- Keyboard Navigation (prev/next chapter) ----
+
   document.addEventListener('keydown', function (e) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
     if (e.key === 'ArrowLeft') {
       var prev = document.querySelector('.nav-prev:not(.hidden)');
       if (prev && prev.href) window.location.href = prev.href;
@@ -127,7 +133,8 @@
     }
   });
 
-  // ---- Font size toggle ----
+  // ---- Font Size Toggle ----
+
   var fontSizes = ['', 'font-sm', 'font-lg'];
   var fontLabels = ['Aa', 'A', 'A+'];
   var toggleBtn = document.getElementById('font-size-toggle');
@@ -141,9 +148,8 @@
       currentIdx = (currentIdx + 1) % fontSizes.length;
       document.documentElement.className = fontSizes[currentIdx];
       toggleBtn.textContent = fontLabels[currentIdx];
-      try {
-        localStorage.setItem(FONT_KEY, fontSizes[currentIdx]);
-      } catch (e) {}
+      try { localStorage.setItem(FONT_KEY, fontSizes[currentIdx]); }
+      catch (e) {}
     });
   }
 })();
