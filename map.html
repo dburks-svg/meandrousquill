@@ -8,6 +8,117 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .map-page {
+            max-width: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        .map-page h1 {
+            font-family: 'Cinzel', serif;
+            color: var(--accent-gold, #c9a84c);
+            text-align: center;
+            font-size: clamp(1.2rem, 3vw, 1.8rem);
+            letter-spacing: 0.08em;
+            margin: 1.5rem 1rem 0.5rem;
+        }
+        .map-subtitle {
+            text-align: center;
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+            color: var(--text-secondary, #8a7a5a);
+            font-size: 0.9rem;
+            margin: 0 1rem 1rem;
+        }
+        .map-container {
+            position: relative;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            overflow: hidden;
+            cursor: grab;
+            background: #1a1408;
+            border-top: 1px solid var(--border, #3d3424);
+            border-bottom: 1px solid var(--border, #3d3424);
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .map-container:active { cursor: grabbing; }
+        .map-container img {
+            display: block;
+            width: 100%;
+            transform-origin: 0 0;
+            pointer-events: none;
+        }
+        .map-controls {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+        .map-controls button {
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(201, 168, 76, 0.4);
+            background: rgba(16, 12, 7, 0.75);
+            color: var(--accent-gold, #c9a84c);
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .map-controls button:hover {
+            border-color: rgba(201, 168, 76, 0.7);
+            background: rgba(16, 12, 7, 0.9);
+        }
+        .map-controls .reset-btn {
+            width: auto;
+            padding: 0 12px;
+            font-size: 0.7rem;
+            letter-spacing: 0.06em;
+        }
+        .map-hint {
+            text-align: center;
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+            color: var(--text-secondary, #8a7a5a);
+            font-size: 0.8rem;
+            margin: 0.5rem 1rem 0;
+        }
+        .map-credit {
+            text-align: center;
+            font-family: 'Crimson Text', serif;
+            font-style: italic;
+            color: var(--accent-gold, #c9a84c);
+            font-size: 0.85rem;
+            margin: 1rem 1rem 1.5rem;
+            opacity: 0.8;
+        }
+        .map-nav {
+            text-align: center;
+            margin: 0 1rem 2rem;
+        }
+        .map-nav a {
+            font-family: 'Cinzel', serif;
+            color: var(--accent-gold, #c9a84c);
+            text-decoration: none;
+            font-size: 0.9rem;
+            letter-spacing: 0.04em;
+            margin: 0 1rem;
+        }
+        .map-nav a:hover { text-decoration: underline; }
+        @media (max-width: 640px) {
+            .map-hint { font-size: 0.75rem; }
+        }
+    </style>
 </head>
 <body>
     <header class="site-header">
@@ -20,27 +131,25 @@
 
     <main class="map-page">
         <h1>The World of Dragon's Eggs &amp; Spirit Stones</h1>
+        <p class="map-subtitle">
+            Deborah drew this world by hand, in pen and pencil, long before a single chapter was written.
+        </p>
 
-        <div class="map-frame">
-            <!--
-                When the hand-drawn map is photographed:
-                1. Place the image in images/map.jpg (or .png)
-                2. Uncomment the <img> tag below
-                3. Delete or comment out the placeholder div
-            -->
-
-            <!-- <img src="images/map.jpg" alt="Hand-drawn map of the world of Dragon's Eggs and Spirit Stones, created by Deborah Burks"> -->
-
-            <div class="map-placeholder">
-                <div class="map-placeholder-icon">&#x1F5FA;</div>
-                <p class="map-placeholder-text">
-                    The author's hand-drawn map, crafted in pen and pencil over years of worldbuilding,
-                    will be added here soon.
-                </p>
+        <div class="map-container" id="map-container">
+            <div class="map-controls">
+                <button onclick="zoomBtn(1.3)" aria-label="Zoom in">+</button>
+                <button onclick="zoomBtn(1/1.3)" aria-label="Zoom out">&minus;</button>
+                <button class="reset-btn" onclick="resetView()">Reset</button>
             </div>
+            <img id="map-img" src="images/map.png"
+                 alt="Illustrated map of the world of Dragon's Eggs and Spirit Stones, based on the hand-drawn map by Deborah Burks"
+                 draggable="false">
         </div>
 
-        <nav class="prose-nav">
+        <p class="map-hint">Drag to pan. Scroll or pinch to zoom.</p>
+        <p class="map-credit">Map by Deborah Burks, digitized with love</p>
+
+        <nav class="map-nav">
             <a href="index.html">Home</a>
             <a href="chapters/chapter-01.html">Begin Reading</a>
         </nav>
@@ -50,5 +159,134 @@
         <p>Dragon's Eggs and Spirit Stones by Deborah Burks</p>
         <p>Shared with love, in her memory</p>
     </footer>
+
+    <script>
+    (function () {
+        var container = document.getElementById('map-container');
+        var img = document.getElementById('map-img');
+        var scale = 1, tx = 0, ty = 0;
+        var minScale = 1, maxScale = 6;
+        var dragging = false, startX, startY, startTx, startTy;
+        var lastDist = 0;
+
+        function applyTransform() {
+            img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+        }
+
+        function clampPan() {
+            var cw = container.clientWidth;
+            var ch = container.clientHeight;
+            var iw = img.naturalWidth || img.clientWidth;
+            var ih = img.naturalHeight || img.clientHeight;
+            var sw = (iw / img.clientWidth) > 0 ? img.clientWidth * scale : cw * scale;
+            var sh = (ih / img.clientHeight) > 0 ? img.clientHeight * scale : ch * scale;
+            sw = container.clientWidth * scale;
+            sh = container.clientWidth * (img.naturalHeight / img.naturalWidth) * scale;
+
+            if (sw <= cw) {
+                tx = (cw - sw) / 2;
+            } else {
+                tx = Math.min(0, Math.max(cw - sw, tx));
+            }
+            if (sh <= ch) {
+                ty = (ch - sh) / 2;
+            } else {
+                ty = Math.min(0, Math.max(ch - sh, ty));
+            }
+        }
+
+        function zoomAt(cx, cy, factor) {
+            var newScale = Math.min(maxScale, Math.max(minScale, scale * factor));
+            var f = newScale / scale;
+            tx = cx - f * (cx - tx);
+            ty = cy - f * (cy - ty);
+            scale = newScale;
+            clampPan();
+            applyTransform();
+        }
+
+        window.zoomBtn = function (factor) {
+            var rect = container.getBoundingClientRect();
+            zoomAt(rect.width / 2, rect.height / 2, factor);
+        };
+
+        window.resetView = function () {
+            scale = 1; tx = 0; ty = 0;
+            clampPan();
+            applyTransform();
+        };
+
+        container.addEventListener('pointerdown', function (e) {
+            if (e.button !== 0) return;
+            dragging = true;
+            startX = e.clientX; startY = e.clientY;
+            startTx = tx; startTy = ty;
+            container.setPointerCapture(e.pointerId);
+            e.preventDefault();
+        });
+
+        container.addEventListener('pointermove', function (e) {
+            if (!dragging) return;
+            tx = startTx + (e.clientX - startX);
+            ty = startTy + (e.clientY - startY);
+            clampPan();
+            applyTransform();
+        });
+
+        container.addEventListener('pointerup', function () { dragging = false; });
+        container.addEventListener('pointercancel', function () { dragging = false; });
+
+        container.addEventListener('wheel', function (e) {
+            e.preventDefault();
+            var rect = container.getBoundingClientRect();
+            var cx = e.clientX - rect.left;
+            var cy = e.clientY - rect.top;
+            var factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+            zoomAt(cx, cy, factor);
+        }, { passive: false });
+
+        container.addEventListener('dblclick', function (e) {
+            var rect = container.getBoundingClientRect();
+            zoomAt(e.clientX - rect.left, e.clientY - rect.top, 1.5);
+        });
+
+        var touches = {};
+        container.addEventListener('touchstart', function (e) {
+            for (var i = 0; i < e.changedTouches.length; i++) {
+                touches[e.changedTouches[i].identifier] = {
+                    x: e.changedTouches[i].clientX,
+                    y: e.changedTouches[i].clientY
+                };
+            }
+            var keys = Object.keys(touches);
+            if (keys.length === 2) {
+                var t0 = touches[keys[0]], t1 = touches[keys[1]];
+                lastDist = Math.hypot(t1.x - t0.x, t1.y - t0.y);
+            }
+        }, { passive: true });
+
+        container.addEventListener('touchmove', function (e) {
+            var keys = Object.keys(touches);
+            if (keys.length === 2 && e.touches.length === 2) {
+                var t0 = e.touches[0], t1 = e.touches[1];
+                var dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+                if (lastDist > 0) {
+                    var rect = container.getBoundingClientRect();
+                    var cx = (t0.clientX + t1.clientX) / 2 - rect.left;
+                    var cy = (t0.clientY + t1.clientY) / 2 - rect.top;
+                    zoomAt(cx, cy, dist / lastDist);
+                }
+                lastDist = dist;
+            }
+        }, { passive: true });
+
+        container.addEventListener('touchend', function (e) {
+            for (var i = 0; i < e.changedTouches.length; i++) {
+                delete touches[e.changedTouches[i].identifier];
+            }
+            lastDist = 0;
+        }, { passive: true });
+    })();
+    </script>
 </body>
 </html>
