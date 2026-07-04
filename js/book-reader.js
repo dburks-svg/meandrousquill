@@ -3,29 +3,22 @@
 
     var STORAGE_MODE_KEY = 'mq-reading-mode';
     var STORAGE_KEY = 'mq-progress';
-    var MIN_SWIPE = 50;
-    var RESIZE_DEBOUNCE = 250;
+    var MOBILE_BREAKPOINT = 768;
+    var TABLET_BREAKPOINT = 1024;
+    var RESIZE_DEBOUNCE = 400;
 
     var chapterText = document.getElementById('chapter-text');
     var bookPage = document.querySelector('.book-page');
     var chapterContent = document.querySelector('.chapter-content');
     if (!chapterText || !bookPage) return;
 
-    var paginationViewport = document.createElement('div');
-    paginationViewport.className = 'pagination-viewport';
-    chapterText.parentNode.insertBefore(paginationViewport, chapterText);
-    paginationViewport.appendChild(chapterText);
-
     var chapterNum = chapterContent ? parseInt(chapterContent.getAttribute('data-chapter'), 10) : 0;
-    var totalPages = 1;
-    var currentPage = 0;
-    var isAnimating = false;
-    var pageIndicator = null;
-    var announcer = null;
+    var pageFlipInstance = null;
+    var flipContainer = null;
+    var originalHTML = chapterText.innerHTML;
     var resizeTimer = null;
-    var pointerStartX = 0;
-    var pointerStartY = 0;
-    var pointerTracking = false;
+    var announcer = null;
+    var currentMode = null;
 
     var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -51,274 +44,329 @@
         localStorage.setItem(STORAGE_MODE_KEY, mode);
     }
 
-    function isBookMode() {
-        return !document.body.classList.contains('scroll-mode');
+    function isScrollMode() {
+        return document.body.classList.contains('scroll-mode');
     }
 
-    // ---- Pagination ----
+    function getViewportMode() {
+        var w = window.innerWidth;
+        if (w < MOBILE_BREAKPOINT) return 'mobile';
+        if (w < TABLET_BREAKPOINT) return 'tablet';
+        return 'desktop';
+    }
 
-    function paginate() {
-        if (!isBookMode()) return;
+    // ---- Measurement ----
+
+    function getTextStyles() {
+        var cs = window.getComputedStyle(chapterText);
+        return {
+            fontFamily: cs.fontFamily,
+            fontSize: cs.fontSize,
+            lineHeight: cs.lineHeight,
+            textIndent: cs.textIndent
+        };
+    }
+
+    function measurePages(pageW, pageH) {
+        var ts = getTextStyles();
+        var measure = document.createElement('div');
+        measure.style.cssText =
+            'position:absolute;left:-99999px;top:0;' +
+            'width:' + pageW + 'px;' +
+            'height:' + pageH + 'px;' +
+            'column-width:' + pageW + 'px;column-fill:auto;' +
+            'column-gap:60px;overflow:visible;' +
+            'font-family:' + ts.fontFamily + ';' +
+            'font-size:' + ts.fontSize + ';' +
+            'line-height:' + ts.lineHeight + ';';
+        measure.className = chapterText.className;
+        measure.innerHTML = originalHTML;
+
+        var extraStyles = document.createElement('style');
+        extraStyles.textContent = 'p{break-inside:avoid-column;text-indent:1.5em;margin-bottom:1em}p:first-child{text-indent:0}.scene-break{break-before:column;break-inside:avoid;margin:2.5rem auto;height:24px}';
+        measure.appendChild(extraStyles);
+
+        document.body.appendChild(measure);
+        void measure.offsetHeight;
+
+        var colW = pageW + 60;
+        var scrollW = measure.scrollWidth;
+        var total = Math.max(1, Math.round(scrollW / colW));
+
+        document.body.removeChild(measure);
+        return total;
+    }
+
+    // ---- Page element creation ----
+
+    var PAGE_PAD_X = 40;
+    var PAGE_PAD_TOP = 30;
+    var PAGE_PAD_BOTTOM = 44;
+
+    function getTextArea(pageW, pageH) {
+        return {
+            w: pageW - (PAGE_PAD_X * 2),
+            h: pageH - PAGE_PAD_TOP - PAGE_PAD_BOTTOM
+        };
+    }
+
+    function createPageElements(totalPages, pageW, pageH) {
+        var pages = [];
+        var text = getTextArea(pageW, pageH);
+        var colStride = text.w + 60;
+        var ts = getTextStyles();
+
+        for (var i = 0; i < totalPages; i++) {
+            var page = document.createElement('div');
+            page.className = 'flip-page';
+            page.setAttribute('data-page', i);
+
+            var inner = document.createElement('div');
+            inner.className = 'flip-page-content';
+            inner.style.cssText =
+                'width:' + text.w + 'px;height:' + text.h + 'px;' +
+                'column-width:' + text.w + 'px;column-fill:auto;' +
+                'column-gap:60px;position:absolute;' +
+                'left:' + PAGE_PAD_X + 'px;top:' + PAGE_PAD_TOP + 'px;' +
+                'overflow:hidden;' +
+                'font-family:' + ts.fontFamily + ';' +
+                'font-size:' + ts.fontSize + ';' +
+                'line-height:' + ts.lineHeight + ';';
+
+            var contentWrap = document.createElement('div');
+            contentWrap.style.cssText =
+                'width:99999px;height:' + text.h + 'px;' +
+                'column-width:' + text.w + 'px;column-fill:auto;' +
+                'column-gap:60px;' +
+                'transform:translateX(' + (-(i * colStride)) + 'px);';
+            contentWrap.innerHTML = originalHTML;
+
+            inner.appendChild(contentWrap);
+
+            var pageNum = document.createElement('div');
+            pageNum.className = 'flip-page-number';
+            pageNum.textContent = (i + 1);
+
+            page.appendChild(inner);
+            page.appendChild(pageNum);
+            pages.push(page);
+        }
+        return pages;
+    }
+
+    // ---- StPageFlip initialization ----
+
+    function initFlipbook() {
+        if (pageFlipInstance) destroyFlipbook();
+
+        document.body.classList.remove('scroll-mode');
+        currentMode = 'flipbook';
+
+        chapterText.style.display = 'none';
 
         var heading = chapterContent.querySelector('.chapter-heading');
-        var headingHeight = heading ? heading.offsetHeight + 40 : 80;
-        var contentPadding = 100;
+        if (heading) heading.style.display = 'none';
 
-        var availableHeight = bookPage.clientHeight - headingHeight - contentPadding;
         var contentStyle = window.getComputedStyle(chapterContent);
         var padLeft = parseFloat(contentStyle.paddingLeft) || 40;
         var padRight = parseFloat(contentStyle.paddingRight) || 40;
-        var availableWidth = chapterContent.clientWidth - padLeft - padRight - 30;
+        var padTop = parseFloat(contentStyle.paddingTop) || 48;
+        var padBottom = parseFloat(contentStyle.paddingBottom) || 32;
 
-        if (availableHeight < 200) availableHeight = 400;
-        if (availableWidth < 200) availableWidth = 280;
+        var containerW = bookPage.clientWidth;
+        var containerH = bookPage.clientHeight;
 
-        paginationViewport.style.height = availableHeight + 'px';
-        paginationViewport.style.overflow = 'hidden';
-        paginationViewport.style.position = 'relative';
+        var pageW = Math.floor((containerW - padLeft - padRight) / 2) - 40;
+        var pageH = containerH - padTop - padBottom - 60;
 
-        paginationViewport.style.width = availableWidth + 'px';
-
-        chapterText.classList.add('paginated');
-        chapterText.style.height = availableHeight + 'px';
-        chapterText.style.columnWidth = availableWidth + 'px';
-
-        void chapterText.offsetHeight;
-
-        var colW = getColumnWidth();
-        var scrollW = chapterText.scrollWidth;
-        totalPages = Math.max(1, Math.ceil(scrollW / colW));
-
-        if (currentPage >= totalPages) {
-            currentPage = totalPages - 1;
+        var viewMode = getViewportMode();
+        if (viewMode === 'tablet') {
+            pageW = Math.floor(containerW - padLeft - padRight) - 40;
         }
 
-        showPage(currentPage, false);
-        updateIndicator();
-        updateProgressBar();
-    }
+        if (pageW < 200) pageW = 280;
+        if (pageH < 200) pageH = 400;
 
-    function getColumnWidth() {
-        var style = window.getComputedStyle(chapterText);
-        var colWidth = parseFloat(style.columnWidth) || chapterText.clientWidth;
-        var gap = parseFloat(style.columnGap) || 60;
-        return colWidth + gap;
-    }
+        var text = getTextArea(pageW, pageH);
+        var totalPages = measurePages(text.w, text.h);
+        var pages = createPageElements(totalPages, pageW, pageH);
 
-    function showPage(page, animate) {
-        if (page < 0 || page >= totalPages) return;
+        flipContainer = document.createElement('div');
+        flipContainer.id = 'flipbook-container';
+        chapterContent.appendChild(flipContainer);
 
-        var oldPage = currentPage;
-        currentPage = page;
+        pages.forEach(function (p) {
+            flipContainer.appendChild(p);
+        });
 
-        var colW = getColumnWidth();
-        var offset = -(currentPage * colW);
+        var usePortrait = viewMode === 'tablet';
 
-        if (animate && !prefersReducedMotion && Math.abs(oldPage - currentPage) === 1) {
-            runFlipAnimation(oldPage < currentPage ? 'forward' : 'backward', function () {
-                chapterText.style.transform = 'translateX(' + offset + 'px)';
-            });
-        } else {
-            chapterText.style.transform = 'translateX(' + offset + 'px)';
+        pageFlipInstance = new St.PageFlip(flipContainer, {
+            width: pageW,
+            height: pageH,
+            size: 'stretch',
+            minWidth: 200,
+            maxWidth: pageW + 40,
+            minHeight: 300,
+            maxHeight: pageH + 40,
+            drawShadow: true,
+            maxShadowOpacity: 0.4,
+            flippingTime: prefersReducedMotion ? 0 : 700,
+            usePortrait: usePortrait,
+            startPage: 0,
+            showCover: false,
+            mobileScrollSupport: false,
+            clickEventForward: true,
+            disableFlipByClick: false,
+            useMouseEvents: true,
+            autoSize: true,
+        });
+
+        pageFlipInstance.loadFromHTML(document.querySelectorAll('#flipbook-container .flip-page'));
+
+        var savedPage = getSavedPage();
+        if (savedPage > 0 && savedPage < totalPages) {
+            pageFlipInstance.turnToPage(savedPage);
         }
 
-        updateIndicator();
-        updateProgressBar();
-        savePagePosition();
-        announce();
+        pageFlipInstance.on('flip', function (e) {
+            var page = e.data;
+            updateProgressBar(page, totalPages);
+            savePagePosition(page, totalPages);
+            announce(page, totalPages);
+        });
+
+        updateProgressBar(pageFlipInstance.getCurrentPageIndex(), totalPages);
+        createModeToggle();
     }
 
-    function updateIndicator() {
-        if (!pageIndicator) return;
-        pageIndicator.textContent = (currentPage + 1) + ' / ' + totalPages;
+    function destroyFlipbook() {
+        if (pageFlipInstance) {
+            pageFlipInstance.destroy();
+            pageFlipInstance = null;
+        }
+        if (flipContainer) {
+            flipContainer.remove();
+            flipContainer = null;
+        }
+        chapterText.style.display = '';
+        var heading = chapterContent.querySelector('.chapter-heading');
+        if (heading) heading.style.display = '';
     }
 
-    function updateProgressBar() {
-        var bar = document.getElementById('reading-progress-bar');
-        if (!bar || !isBookMode()) return;
-        var pct = totalPages > 1 ? ((currentPage + 1) / totalPages) * 100 : 100;
-        bar.style.width = pct + '%';
+    // ---- Scroll mode ----
+
+    function initScrollMode() {
+        if (pageFlipInstance) destroyFlipbook();
+
+        document.body.classList.add('scroll-mode');
+        currentMode = 'scroll';
+        chapterText.style.display = '';
+
+        var heading = chapterContent.querySelector('.chapter-heading');
+        if (heading) heading.style.display = '';
+
+        createModeToggle();
     }
 
-    function savePagePosition() {
+    // ---- Progress ----
+
+    function getSavedPage() {
+        var progress = getProgress();
+        if (progress.pagePositions && progress.pagePositions[chapterNum] !== undefined) {
+            return progress.pagePositions[chapterNum];
+        }
+        if (progress.scrollPositions && progress.scrollPositions[chapterNum]) {
+            return 0;
+        }
+        return 0;
+    }
+
+    function savePagePosition(page, total) {
         var progress = getProgress();
         if (!progress.pagePositions) progress.pagePositions = {};
-        progress.pagePositions[chapterNum] = currentPage;
+        progress.pagePositions[chapterNum] = page;
         progress.currentChapter = chapterNum;
-        if (totalPages > 1) {
+        if (total > 1) {
             if (!progress.scrollPositions) progress.scrollPositions = {};
-            progress.scrollPositions[chapterNum] = ((currentPage + 1) / totalPages).toFixed(4);
+            progress.scrollPositions[chapterNum] = ((page + 1) / total).toFixed(4);
         }
         saveProgress(progress);
     }
 
-    function restorePagePosition() {
-        var progress = getProgress();
-        if (progress.pagePositions && progress.pagePositions[chapterNum] !== undefined) {
-            currentPage = Math.min(progress.pagePositions[chapterNum], totalPages - 1);
-        } else if (progress.scrollPositions && progress.scrollPositions[chapterNum]) {
-            var pct = parseFloat(progress.scrollPositions[chapterNum]);
-            currentPage = Math.min(Math.floor(pct * totalPages), totalPages - 1);
-        }
-        if (currentPage < 0) currentPage = 0;
+    function updateProgressBar(page, total) {
+        var bar = document.getElementById('reading-progress-bar');
+        if (!bar) return;
+        var pct = total > 1 ? ((page + 1) / total) * 100 : 100;
+        bar.style.width = pct + '%';
     }
 
-    function announce() {
+    function announce(page, total) {
         if (!announcer) return;
-        announcer.textContent = 'Page ' + (currentPage + 1) + ' of ' + totalPages;
+        announcer.textContent = 'Page ' + (page + 1) + ' of ' + total;
     }
 
-    // ---- Page flip animation ----
+    // ---- Keyboard ----
 
-    function runFlipAnimation(direction, onMidpoint) {
-        if (isAnimating) return;
-        isAnimating = true;
+    function onKeyDown(e) {
+        if (isScrollMode() || !pageFlipInstance) return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-        var overlay = document.createElement('div');
-        overlay.className = 'flip-overlay';
-        overlay.innerHTML = '<div class="flip-front"></div><div class="flip-back"></div>';
-
-        bookPage.style.perspective = '1200px';
-        bookPage.appendChild(overlay);
-
-        void overlay.offsetHeight;
-        overlay.classList.add(direction === 'forward' ? 'flipping-forward' : 'flipping-backward');
-
-        if (onMidpoint) {
-            setTimeout(onMidpoint, 250);
-        }
-
-        overlay.addEventListener('animationend', function () {
-            overlay.remove();
-            bookPage.style.perspective = '';
-            isAnimating = false;
-        });
-
-        setTimeout(function () {
-            if (isAnimating) {
-                overlay.remove();
-                bookPage.style.perspective = '';
-                isAnimating = false;
+        if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+            e.preventDefault();
+            var current = pageFlipInstance.getCurrentPageIndex();
+            var total = pageFlipInstance.getPageCount();
+            if (current >= total - 2) {
+                goToNextChapter();
+            } else {
+                pageFlipInstance.flipNext();
             }
-        }, 700);
-    }
-
-    // ---- Navigation ----
-
-    function nextPage() {
-        if (isAnimating) return;
-        if (currentPage < totalPages - 1) {
-            showPage(currentPage + 1, true);
-        } else {
-            goToNextChapter();
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+            e.preventDefault();
+            var currentP = pageFlipInstance.getCurrentPageIndex();
+            if (currentP <= 0) {
+                goToPrevChapter();
+            } else {
+                pageFlipInstance.flipPrev();
+            }
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            pageFlipInstance.turnToPage(0);
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            pageFlipInstance.turnToPage(pageFlipInstance.getPageCount() - 1);
         }
     }
 
-    function prevPage() {
-        if (isAnimating) return;
-        if (currentPage > 0) {
-            showPage(currentPage - 1, true);
-        } else {
-            goToPrevChapter();
-        }
-    }
+    // ---- Chapter nav ----
 
     function goToNextChapter() {
-        var nextLink = document.querySelector('.nav-next');
+        var nextLink = document.querySelector('.chapter-nav .nav-next');
         if (nextLink && nextLink.href) {
             window.location.href = nextLink.href;
         }
     }
 
     function goToPrevChapter() {
-        var prevLink = document.querySelector('.nav-prev');
+        var prevLink = document.querySelector('.chapter-nav .nav-prev');
         if (prevLink && prevLink.href) {
             window.location.href = prevLink.href;
         }
     }
 
-    // ---- Keyboard handling ----
-
-    function onKeyDown(e) {
-        if (!isBookMode()) return;
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-        if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-            e.preventDefault();
-            nextPage();
-        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
-            e.preventDefault();
-            prevPage();
-        } else if (e.key === 'Home') {
-            e.preventDefault();
-            showPage(0, false);
-        } else if (e.key === 'End') {
-            e.preventDefault();
-            showPage(totalPages - 1, false);
-        }
-    }
-
-    // ---- Touch / pointer handling ----
-
-    function onPointerDown(e) {
-        if (!isBookMode()) return;
-        if (e.target.closest('a, button')) return;
-        pointerStartX = e.clientX;
-        pointerStartY = e.clientY;
-        pointerTracking = true;
-    }
-
-    function onPointerUp(e) {
-        if (!pointerTracking) return;
-        pointerTracking = false;
-
-        var dx = e.clientX - pointerStartX;
-        var dy = e.clientY - pointerStartY;
-
-        if (Math.abs(dx) > MIN_SWIPE && Math.abs(dy) < Math.abs(dx)) {
-            if (dx < 0) {
-                nextPage();
-            } else {
-                prevPage();
-            }
-        }
-    }
-
-    // ---- Tap zones ----
-
-    function createNavZones() {
-        var prevZone = document.createElement('div');
-        prevZone.className = 'page-nav-zone nav-prev';
-        prevZone.setAttribute('aria-hidden', 'true');
-        prevZone.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>';
-        prevZone.addEventListener('click', function (e) {
-            e.stopPropagation();
-            prevPage();
-        });
-
-        var nextZone = document.createElement('div');
-        nextZone.className = 'page-nav-zone nav-next';
-        nextZone.setAttribute('aria-hidden', 'true');
-        nextZone.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>';
-        nextZone.addEventListener('click', function (e) {
-            e.stopPropagation();
-            nextPage();
-        });
-
-        bookPage.appendChild(prevZone);
-        bookPage.appendChild(nextZone);
-    }
-
     // ---- Mode toggle ----
 
     function createModeToggle() {
+        var existing = document.getElementById('mode-toggle');
+        if (existing) existing.remove();
+
         var nav = document.querySelector('.header-nav');
         if (!nav) return;
 
         var btn = document.createElement('button');
         btn.id = 'mode-toggle';
         btn.setAttribute('aria-label', 'Switch reading mode');
-        updateToggleLabel(btn);
+        updateToggleIcon(btn);
         btn.addEventListener('click', toggleMode);
 
         var fontBtn = document.getElementById('font-size-toggle');
@@ -329,10 +377,10 @@
         }
     }
 
-    function updateToggleLabel(btn) {
+    function updateToggleIcon(btn) {
         if (!btn) btn = document.getElementById('mode-toggle');
         if (!btn) return;
-        if (isBookMode()) {
+        if (!isScrollMode()) {
             btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg>';
             btn.title = 'Switch to scroll mode';
         } else {
@@ -342,85 +390,64 @@
     }
 
     function toggleMode() {
-        if (isBookMode()) {
-            document.body.classList.add('scroll-mode');
-            chapterText.classList.remove('paginated');
-            chapterText.style.height = '';
-            chapterText.style.columnWidth = '';
-            chapterText.style.transform = '';
-            setMode('scroll');
-        } else {
-            document.body.classList.remove('scroll-mode');
+        if (isScrollMode()) {
             setMode('book');
-            currentPage = 0;
-            restorePagePosition();
-            paginate();
+            var viewMode = getViewportMode();
+            if (viewMode === 'mobile') {
+                setMode('book');
+                document.body.classList.remove('scroll-mode');
+                initFlipbook();
+            } else {
+                initFlipbook();
+            }
+        } else {
+            setMode('scroll');
+            initScrollMode();
         }
-        updateToggleLabel();
+        updateToggleIcon();
     }
 
-    // ---- Font size change detection ----
+    // ---- Font size change ----
 
     function watchFontSize() {
         var fontBtn = document.getElementById('font-size-toggle');
         if (!fontBtn) return;
         fontBtn.addEventListener('click', function () {
-            if (!isBookMode()) return;
-            var anchorPara = findAnchorParagraph();
+            if (isScrollMode() || !pageFlipInstance) return;
+            var savedPage = pageFlipInstance.getCurrentPageIndex();
             setTimeout(function () {
-                paginate();
-                if (anchorPara) {
-                    jumpToAnchor(anchorPara);
+                initFlipbook();
+                if (pageFlipInstance && savedPage > 0) {
+                    pageFlipInstance.turnToPage(Math.min(savedPage, pageFlipInstance.getPageCount() - 1));
                 }
-            }, 50);
+            }, 100);
         });
     }
 
-    function findAnchorParagraph() {
-        var paras = chapterText.querySelectorAll('p');
-        var contentRect = chapterText.getBoundingClientRect();
-        for (var i = 0; i < paras.length; i++) {
-            var r = paras[i].getBoundingClientRect();
-            if (r.left >= contentRect.left && r.left < contentRect.left + chapterText.clientWidth) {
-                return i;
-            }
-        }
-        return 0;
-    }
-
-    function jumpToAnchor(paraIndex) {
-        var paras = chapterText.querySelectorAll('p');
-        if (paraIndex >= paras.length) return;
-        var para = paras[paraIndex];
-        var paraLeft = para.offsetLeft;
-        var colW = chapterText.clientWidth + 60;
-        var targetPage = Math.floor(paraLeft / colW);
-        currentPage = Math.min(targetPage, totalPages - 1);
-        showPage(currentPage, false);
-    }
-
-    // ---- Resize handling ----
+    // ---- Resize ----
 
     function onResize() {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(function () {
-            if (!isBookMode()) return;
-            var anchorPara = findAnchorParagraph();
-            paginate();
-            if (anchorPara) {
-                jumpToAnchor(anchorPara);
+            var viewMode = getViewportMode();
+
+            if (viewMode === 'mobile' && currentMode === 'flipbook') {
+                initScrollMode();
+            } else if (viewMode !== 'mobile' && currentMode === 'scroll' && getMode() !== 'scroll') {
+                initFlipbook();
+            } else if (currentMode === 'flipbook' && pageFlipInstance) {
+                var savedPage = pageFlipInstance.getCurrentPageIndex();
+                initFlipbook();
+                if (pageFlipInstance && savedPage > 0) {
+                    pageFlipInstance.turnToPage(Math.min(savedPage, pageFlipInstance.getPageCount() - 1));
+                }
             }
         }, RESIZE_DEBOUNCE);
     }
 
-    // ---- Page indicator ----
+    // ---- Accessibility ----
 
-    function createPageIndicator() {
-        pageIndicator = document.createElement('div');
-        pageIndicator.className = 'page-indicator';
-        pageIndicator.setAttribute('aria-hidden', 'true');
-        bookPage.appendChild(pageIndicator);
-
+    function createAnnouncer() {
         announcer = document.createElement('div');
         announcer.className = 'page-announce';
         announcer.setAttribute('aria-live', 'polite');
@@ -428,27 +455,22 @@
         document.body.appendChild(announcer);
     }
 
-    // ---- Initialize ----
+    // ---- Init ----
 
     function init() {
-        var mode = getMode();
-        if (mode === 'scroll') {
-            document.body.classList.add('scroll-mode');
-        }
-
-        createModeToggle();
-        createPageIndicator();
-        createNavZones();
+        createAnnouncer();
         watchFontSize();
 
-        if (isBookMode()) {
-            restorePagePosition();
-            paginate();
+        var savedMode = getMode();
+        var viewMode = getViewportMode();
+
+        if (viewMode === 'mobile' || savedMode === 'scroll') {
+            initScrollMode();
+        } else {
+            initFlipbook();
         }
 
         document.addEventListener('keydown', onKeyDown);
-        bookPage.addEventListener('pointerdown', onPointerDown);
-        document.addEventListener('pointerup', onPointerUp);
         window.addEventListener('resize', onResize);
     }
 
