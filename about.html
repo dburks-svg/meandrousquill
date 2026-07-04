@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About the Author – Meandrous Quill</title>
+    <title>About the Author - Meandrous Quill</title>
     <meta name="description" content="About Deborah Burks, the author of Dragon's Eggs and Spirit Stones, known online as Meandrous Quill.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/book-reader.css">
 </head>
-<body>
+<body class="book-view">
     <header class="site-header">
         <a href="index.html" class="book-title">Dragon's Eggs &amp; Spirit Stones</a>
         <nav class="header-nav">
@@ -18,35 +19,43 @@
         </nav>
     </header>
 
+    <div class="book-spread">
+    <div class="book-page">
     <main class="prose-page">
         <h1>About the Author</h1>
 
-        <!--
-            Dustin: This is the space to share Deborah's story with readers.
-
-            Some things you might want to include:
-            - Who Deborah was
-            - Her journey as a writer (the writing classes, the forums, her handle "Meandrous Quill")
-            - How she built this world over 12 years
-            - The hand-drawn maps, the characters she created
-            - Anything else you'd like the world to know about her
-
-            If you have a photo of Deborah you'd like to include,
-            place it in the images/ folder and uncomment the img tag below.
-        -->
-
+        <!-- If you have a photo of Deborah, place it at images/deborah.jpg and uncomment: -->
         <!-- <img src="images/deborah.jpg" alt="Deborah Burks" class="author-photo"> -->
 
-        <p class="centered" style="font-family: var(--font-heading); font-size: 1.2rem; color: var(--accent-gold); margin-bottom: 2rem;">
+        <p class="centered" style="font-family: var(--font-heading); font-size: 1.4rem; color: var(--accent-gold); margin-bottom: 0.5rem; letter-spacing: 0.08em;">
             Meandrous Quill
         </p>
 
-        <p class="centered" style="font-style: italic; color: var(--text-secondary); margin-bottom: 2rem;">
-            This page is waiting for the story of the woman behind the words.
+        <p class="centered" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 2.5rem;">
+            The writing name of Deborah Burks
         </p>
 
-        <p class="centered" style="color: var(--accent-ember);">
-            To be written by Dana Burks
+        <p style="text-indent: 1.5em;">
+            Deborah Burks spent twenty years building the world you are about to enter. She wrote it by hand, filling notebooks with prose, maps, histories, and languages that existed nowhere but in her imagination. She took writing classes to sharpen her craft. She joined forums under the name "Meandrous Quill" to share her journey with other writers. She drew the maps herself, in pen and pencil on large boards, charting coastlines and mountain ranges and the paths her characters would walk.
+        </p>
+
+        <p style="text-indent: 1.5em;">
+            The result is "Dragon's Eggs and Spirit Stones": a high fantasy novel of runestones and dragon paths, of bards and runesmiths, of sprites on the wind and bonds of honor sealed with a third eye. It is 48 chapters and over 114,000 words. Every one of those words is hers. No AI wrote them. No ghostwriter shaped them. This is the work of one woman's mind and heart, poured out over two decades of patient, devoted craft.
+        </p>
+
+        <p style="text-indent: 1.5em;">
+            Deborah passed away from COPD and hypertension. She never saw her book published. But she left behind a complete story, fully realized, waiting to be read. Her husband Dana is sharing it here, freely and without restriction, so that the world she spent her life building can finally be explored by others.
+        </p>
+
+        <p style="text-indent: 1.5em;">
+            There are no ads on this site. No accounts to create. No paywalls. No tracking. Just a story, written with love, shared with love.
+        </p>
+
+        <hr class="scene-break">
+
+        <p class="centered" style="font-style: italic; color: var(--accent-ember); font-size: 0.85rem; margin-top: 2rem;">
+            Dana: You can replace or expand this text with your own words about Deborah whenever you're ready.
+            If you have a photo of her, place it in the images/ folder as "deborah.jpg" and uncomment the img tag above.
         </p>
 
         <nav class="prose-nav">
@@ -54,6 +63,8 @@
             <a href="chapters/chapter-01.html">Begin Reading</a>
         </nav>
     </main>
+    </div>
+    </div>
 
     <footer class="site-footer">
         <p>Dragon's Eggs and Spirit Stones by Deborah Burks</p>

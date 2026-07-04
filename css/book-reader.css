@@ -1,0 +1,669 @@
+/* ============================================================
+   BOOK READER - Illuminated Manuscript Theme
+   Dragon's Eggs and Spirit Stones by Deborah Burks
+   ============================================================ */
+
+:root {
+    --parchment-base: #2a2218;
+    --parchment-warm: #332a1e;
+    --parchment-edge: #1e1812;
+    --parchment-stain: rgba(139, 69, 19, 0.06);
+    --book-spine-width: 16px;
+    --book-page-radius: 3px;
+    --book-border-gold: rgba(201, 168, 76, 0.25);
+    --candle-glow: rgba(212, 136, 58, 0.035);
+    --candle-warm: rgba(201, 168, 76, 0.025);
+    --firelight-flicker: rgba(196, 98, 42, 0.02);
+    --page-width: 0;
+    --page-height: 0;
+    --current-page: 0;
+    --gutter: 60px;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --parchment-base: #f5efe4;
+        --parchment-warm: #ede4d4;
+        --parchment-edge: #ddd4c4;
+        --parchment-stain: rgba(139, 69, 19, 0.04);
+        --candle-glow: rgba(212, 136, 58, 0.05);
+        --candle-warm: rgba(201, 168, 76, 0.04);
+        --firelight-flicker: rgba(196, 98, 42, 0.03);
+    }
+}
+
+/* ---- Background atmosphere ---- */
+
+body.book-view {
+    background:
+        radial-gradient(ellipse 100% 80% at 50% 50%, var(--bg-deep), #0a0806);
+    background-attachment: fixed;
+    overflow: hidden;
+    height: 100vh;
+}
+
+body.book-view.scroll-mode {
+    overflow: auto;
+    height: auto;
+}
+
+body.book-view::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+        radial-gradient(circle 2px at 15% 25%, rgba(201, 168, 76, 0.12), transparent 3px),
+        radial-gradient(circle 1.5px at 55% 65%, rgba(212, 136, 58, 0.08), transparent 2px),
+        radial-gradient(circle 1px at 78% 18%, rgba(201, 168, 76, 0.1), transparent 2px),
+        radial-gradient(circle 1.5px at 32% 82%, rgba(232, 200, 150, 0.07), transparent 2px),
+        radial-gradient(circle 1px at 88% 55%, rgba(201, 168, 76, 0.06), transparent 2px);
+    animation: ambient-drift 25s ease-in-out infinite alternate;
+}
+
+@keyframes ambient-drift {
+    0% { transform: translateY(0) translateX(0); }
+    33% { transform: translateY(-4px) translateX(3px); }
+    66% { transform: translateY(2px) translateX(-3px); }
+    100% { transform: translateY(-2px) translateX(2px); }
+}
+
+/* ---- Book spread container ---- */
+
+.book-spread {
+    position: relative;
+    max-width: 900px;
+    margin: 1.5rem auto 2rem;
+    padding: 0 1rem;
+}
+
+/* ---- Book spine (left edge) ---- */
+
+.book-spread::before {
+    content: '';
+    position: absolute;
+    left: calc(1rem - var(--book-spine-width) - 2px);
+    top: 0;
+    bottom: 0;
+    width: var(--book-spine-width);
+    background: linear-gradient(to right,
+        #12100a 0%,
+        #2a1f15 25%,
+        #3a2a1c 50%,
+        #2a1f15 75%,
+        #1a1410 100%);
+    border-radius: 3px 0 0 3px;
+    box-shadow:
+        inset -2px 0 6px rgba(0, 0, 0, 0.5),
+        inset 2px 0 4px rgba(201, 168, 76, 0.04),
+        -3px 0 8px rgba(0, 0, 0, 0.4);
+    border-left: 1px solid rgba(201, 168, 76, 0.12);
+}
+
+/* Spine gold tooling bands */
+.book-spread::after {
+    content: '';
+    position: absolute;
+    left: calc(1rem - var(--book-spine-width) + 3px);
+    top: 30px;
+    bottom: 30px;
+    width: calc(var(--book-spine-width) - 6px);
+    background: repeating-linear-gradient(to bottom,
+        transparent 0px,
+        transparent 50px,
+        rgba(201, 168, 76, 0.18) 50px,
+        rgba(201, 168, 76, 0.18) 51px,
+        transparent 51px,
+        transparent 54px,
+        rgba(201, 168, 76, 0.12) 54px,
+        rgba(201, 168, 76, 0.12) 55px,
+        transparent 55px,
+        transparent 105px);
+    pointer-events: none;
+    border-radius: 2px;
+}
+
+/* ---- Book page (the parchment surface) ---- */
+
+.book-page {
+    position: relative;
+    border-radius: var(--book-page-radius);
+    background:
+        radial-gradient(ellipse 35% 25% at 20% 15%, var(--parchment-stain), transparent),
+        radial-gradient(ellipse 25% 30% at 75% 80%, var(--parchment-stain), transparent),
+        radial-gradient(ellipse 20% 20% at 85% 30%, rgba(201, 168, 76, 0.02), transparent),
+        repeating-linear-gradient(0deg,
+            transparent,
+            transparent 3px,
+            rgba(0, 0, 0, 0.006) 3px,
+            rgba(0, 0, 0, 0.006) 5px),
+        linear-gradient(168deg, var(--parchment-warm) 0%, var(--parchment-base) 45%, var(--parchment-edge) 100%);
+    box-shadow:
+        inset 0 0 40px rgba(0, 0, 0, 0.12),
+        inset 3px 0 12px rgba(0, 0, 0, 0.08),
+        0 2px 4px rgba(0, 0, 0, 0.25),
+        0 8px 20px rgba(0, 0, 0, 0.18),
+        0 20px 40px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(201, 168, 76, 0.15);
+    height: calc(100vh - 100px);
+    overflow: hidden;
+}
+
+body.book-view.scroll-mode .book-page {
+    height: auto;
+    overflow: visible;
+}
+
+/* Paper grain texture overlay */
+.book-page::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0.25;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 1;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Page edges (stacked paper effect on right) */
+.book-page::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    right: -5px;
+    bottom: 6px;
+    width: 5px;
+    background: repeating-linear-gradient(to bottom,
+        var(--parchment-edge) 0px,
+        var(--parchment-base) 1px,
+        var(--parchment-edge) 2px);
+    border-radius: 0 2px 2px 0;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.2);
+    opacity: 0.7;
+}
+
+/* ---- Inner page border (gold rule with corner accents) ---- */
+
+.book-view .chapter-content {
+    position: relative;
+    padding: 3rem 2.5rem 2rem;
+    margin: 0;
+    max-width: none;
+    z-index: 2;
+}
+
+.book-view .chapter-content::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border: 1px solid var(--book-border-gold);
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        linear-gradient(135deg, rgba(201, 168, 76, 0.12) 0%, transparent 2.5%),
+        linear-gradient(225deg, rgba(201, 168, 76, 0.12) 0%, transparent 2.5%),
+        linear-gradient(315deg, rgba(201, 168, 76, 0.12) 0%, transparent 2.5%),
+        linear-gradient(45deg, rgba(201, 168, 76, 0.12) 0%, transparent 2.5%);
+}
+
+/* Second inner rule (double border effect) */
+.book-view .chapter-content::after {
+    content: '';
+    position: absolute;
+    inset: 16px;
+    border: 1px solid rgba(201, 168, 76, 0.1);
+    border-radius: 1px;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ---- Ambient firelight ---- */
+
+.book-view .book-page > .chapter-content {
+    background:
+        radial-gradient(ellipse 50% 40% at 25% 20%, var(--candle-glow), transparent),
+        radial-gradient(ellipse 40% 50% at 75% 75%, var(--candle-warm), transparent),
+        radial-gradient(ellipse 80% 25% at 50% 100%, var(--firelight-flicker), transparent);
+    animation: firelight-breathe 10s ease-in-out infinite alternate;
+}
+
+@keyframes firelight-breathe {
+    0% { opacity: 0.92; }
+    50% { opacity: 1; }
+    100% { opacity: 0.95; }
+}
+
+/* ---- Chapter heading enhancements ---- */
+
+.book-view .chapter-heading {
+    position: relative;
+    z-index: 2;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+}
+
+.book-view .chapter-heading::before {
+    content: '';
+    display: block;
+    width: 120px;
+    height: 20px;
+    margin: 0 auto 1.2rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 20'%3E%3Cdefs%3E%3ClinearGradient id='fade-l' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23c9a84c' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%23c9a84c' stop-opacity='0.5'/%3E%3C/linearGradient%3E%3ClinearGradient id='fade-r' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23c9a84c' stop-opacity='0.5'/%3E%3Cstop offset='1' stop-color='%23c9a84c' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cline x1='5' y1='10' x2='45' y2='10' stroke='url(%23fade-l)' stroke-width='0.7'/%3E%3Cline x1='75' y1='10' x2='115' y2='10' stroke='url(%23fade-r)' stroke-width='0.7'/%3E%3Crect x='55' y='5' width='10' height='10' transform='rotate(45 60 10)' fill='none' stroke='%23c9a84c' stroke-width='0.8' opacity='0.6'/%3E%3Crect x='57' y='7' width='6' height='6' transform='rotate(45 60 10)' fill='none' stroke='%23c9a84c' stroke-width='0.5' opacity='0.4'/%3E%3Ccircle cx='60' cy='10' r='1.5' fill='%23c9a84c' opacity='0.5'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0.7;
+}
+
+/* ---- Illuminated drop cap ---- */
+
+.book-view .chapter-text p:first-child::first-letter {
+    font-family: 'Cinzel', 'Palatino Linotype', serif;
+    font-size: 3.6em;
+    float: left;
+    line-height: 0.72;
+    padding: 0.08em 0.12em 0.04em 0.04em;
+    margin-right: 0.06em;
+    color: var(--accent-gold);
+    text-shadow:
+        0 0 12px rgba(201, 168, 76, 0.25),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(135deg, rgba(139, 69, 19, 0.12), rgba(201, 168, 76, 0.06));
+    border: 1px solid rgba(201, 168, 76, 0.18);
+    border-radius: 2px;
+}
+
+/* ---- Enhanced scene breaks ---- */
+
+.book-view .scene-break {
+    border: none;
+    text-align: center;
+    margin: 2.5rem auto;
+    height: 24px;
+    max-width: 240px;
+    position: relative;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 24'%3E%3Cdefs%3E%3ClinearGradient id='sl' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%238b4513' stop-opacity='0'/%3E%3Cstop offset='1' stop-color='%238b4513' stop-opacity='0.6'/%3E%3C/linearGradient%3E%3ClinearGradient id='sr' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%238b4513' stop-opacity='0.6'/%3E%3Cstop offset='1' stop-color='%238b4513' stop-opacity='0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cline x1='10' y1='12' x2='90' y2='12' stroke='url(%23sl)' stroke-width='0.6'/%3E%3Cline x1='150' y1='12' x2='230' y2='12' stroke='url(%23sr)' stroke-width='0.6'/%3E%3Cpath d='M108,12 L120,4 L132,12 L120,20 Z' fill='none' stroke='%23c9a84c' stroke-width='0.8' opacity='0.5'/%3E%3Cpath d='M112,12 L120,7 L128,12 L120,17 Z' fill='none' stroke='%23c9a84c' stroke-width='0.6' opacity='0.4'/%3E%3Ccircle cx='120' cy='12' r='2' fill='%23c9a84c' opacity='0.4'/%3E%3Ccircle cx='95' cy='12' r='1.5' fill='%23c9a84c' opacity='0.3'/%3E%3Ccircle cx='145' cy='12' r='1.5' fill='%23c9a84c' opacity='0.3'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.book-view .scene-break::before,
+.book-view .scene-break::after {
+    content: none;
+}
+
+/* ---- Book mode pagination ---- */
+
+.pagination-viewport {
+    position: relative;
+    overflow: hidden;
+    z-index: 2;
+}
+
+.book-view .chapter-text.paginated {
+    column-fill: auto;
+    column-gap: var(--gutter);
+    position: relative;
+    z-index: 2;
+}
+
+.book-view .chapter-text.paginated p {
+    break-inside: avoid-column;
+}
+
+.book-view .chapter-text.paginated .scene-break {
+    break-before: column;
+    break-inside: avoid;
+}
+
+/* ---- Page turn animation ---- */
+
+.flip-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    transform-origin: left center;
+    transform-style: preserve-3d;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.flip-overlay.flipping-forward {
+    animation: pageFlipForward 0.55s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.flip-overlay.flipping-backward {
+    transform-origin: right center;
+    animation: pageFlipBackward 0.55s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+.flip-front,
+.flip-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: var(--book-page-radius);
+    overflow: hidden;
+}
+
+.flip-front {
+    background: var(--parchment-base);
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.flip-back {
+    background: var(--parchment-base);
+    transform: rotateY(180deg);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes pageFlipForward {
+    0% {
+        transform: rotateY(0deg);
+        box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+    }
+    50% {
+        box-shadow: -8px 0 20px rgba(0, 0, 0, 0.25);
+    }
+    100% {
+        transform: rotateY(-180deg);
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+    }
+}
+
+@keyframes pageFlipBackward {
+    0% {
+        transform: rotateY(0deg);
+        box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+    }
+    50% {
+        box-shadow: 8px 0 20px rgba(0, 0, 0, 0.25);
+    }
+    100% {
+        transform: rotateY(180deg);
+        box-shadow: -4px 0 12px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* ---- Page indicator ---- */
+
+.page-indicator {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    letter-spacing: 0.05em;
+    z-index: 5;
+    pointer-events: none;
+}
+
+/* ---- Navigation zones (visual hints) ---- */
+
+.page-nav-zone {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    z-index: 10;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-nav-zone:hover {
+    opacity: 1;
+}
+
+.page-nav-zone.nav-prev {
+    left: 0;
+    background: linear-gradient(to right, rgba(201, 168, 76, 0.06), transparent);
+    border-radius: var(--book-page-radius) 0 0 var(--book-page-radius);
+}
+
+.page-nav-zone.nav-next {
+    right: 0;
+    background: linear-gradient(to left, rgba(201, 168, 76, 0.06), transparent);
+    border-radius: 0 var(--book-page-radius) var(--book-page-radius) 0;
+}
+
+.page-nav-zone svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--accent-gold);
+    opacity: 0.5;
+}
+
+/* ---- Mode toggle button ---- */
+
+#mode-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: 'Cinzel', serif;
+    transition: color 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+#mode-toggle:hover {
+    color: var(--accent-gold);
+    border-color: var(--accent-gold);
+}
+
+#mode-toggle svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* ---- End of chapter ornament ---- */
+
+.chapter-end-ornament {
+    text-align: center;
+    margin: 3rem auto 1.5rem;
+    opacity: 0.5;
+}
+
+.chapter-end-ornament svg {
+    width: 60px;
+    height: 30px;
+}
+
+/* ---- Accessibility: live region ---- */
+
+.page-announce {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 900px) {
+    .book-spread::before,
+    .book-spread::after {
+        display: none;
+    }
+
+    .book-spread {
+        margin: 1rem auto;
+        padding: 0 0.5rem;
+    }
+
+    .book-page::after {
+        width: 3px;
+        right: -3px;
+    }
+
+    .book-view .chapter-content {
+        padding: 2.5rem 1.8rem 1.5rem;
+    }
+
+    .book-view .chapter-content::before {
+        inset: 8px;
+    }
+
+    .book-view .chapter-content::after {
+        display: none;
+    }
+
+    .page-nav-zone {
+        width: 50px;
+    }
+}
+
+@media (max-width: 600px) {
+    .book-page {
+        border-radius: 0;
+        box-shadow:
+            inset 0 0 20px rgba(0, 0, 0, 0.08),
+            0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .book-page::after {
+        display: none;
+    }
+
+    .book-view .chapter-content {
+        padding: 2rem 1.2rem 1.2rem;
+    }
+
+    .book-view .chapter-content::before {
+        inset: 6px;
+        border-color: rgba(201, 168, 76, 0.15);
+    }
+
+    .book-view .chapter-heading::before {
+        width: 80px;
+    }
+
+    .book-view .chapter-text p:first-child::first-letter {
+        font-size: 2.8em;
+    }
+
+    .page-nav-zone {
+        width: 40px;
+    }
+
+    .page-indicator {
+        bottom: 12px;
+        font-size: 0.65rem;
+    }
+
+    body.book-view::after {
+        display: none;
+    }
+}
+
+/* ---- Reduced motion ---- */
+
+@media (prefers-reduced-motion: reduce) {
+    body.book-view::after {
+        animation: none;
+    }
+
+    .book-view .book-page > .chapter-content {
+        animation: none;
+        opacity: 1;
+    }
+
+    .flip-overlay,
+    .flip-overlay.flipping-forward,
+    .flip-overlay.flipping-backward {
+        animation: none !important;
+        transition: none !important;
+    }
+
+    .page-nav-zone {
+        transition: none;
+    }
+}
+
+/* ---- Scroll mode overrides (when user switches back) ---- */
+
+body.book-view.scroll-mode .book-spread::before,
+body.book-view.scroll-mode .book-spread::after {
+    display: none;
+}
+
+body.book-view.scroll-mode .book-page::after {
+    display: none;
+}
+
+body.book-view.scroll-mode .page-indicator,
+body.book-view.scroll-mode .page-nav-zone,
+body.book-view.scroll-mode .page-announce {
+    display: none;
+}
+
+body.book-view.scroll-mode .pagination-viewport {
+    height: auto !important;
+    overflow: visible !important;
+}
+
+body.book-view.scroll-mode .chapter-text.paginated {
+    height: auto !important;
+    column-width: unset !important;
+    column-gap: unset !important;
+    transform: none !important;
+}
+
+/* ---- Prose pages (dedication, about) in book theme ---- */
+
+body.book-view:has(.prose-page) {
+    overflow-y: auto;
+    height: auto;
+}
+
+body.book-view:has(.prose-page) .book-page {
+    height: auto;
+    overflow: visible;
+    min-height: calc(100vh - 100px);
+}
+
+body.book-view .prose-page {
+    position: relative;
+    z-index: 2;
+    padding: 3rem 2.5rem 2rem;
+}
+
+body.book-view .prose-page h1 {
+    position: relative;
+    z-index: 2;
+}
+
+body.book-view .prose-page p {
+    position: relative;
+    z-index: 2;
+}
+
+body.book-view .prose-page .prose-nav {
+    position: relative;
+    z-index: 2;
+}
+
+body.book-view .prose-page .scene-break {
+    position: relative;
+    z-index: 2;
+}

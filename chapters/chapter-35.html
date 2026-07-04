@@ -12,11 +12,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/book-reader.css">
     <script>
     (function(){var s=localStorage.getItem('mq-font-size');if(s)document.documentElement.className=s;})();
     </script>
 </head>
-<body>
+<body class="book-view">
     <a href="#chapter-text" class="skip-link">Skip to content</a>
     <div id="reading-progress-bar"></div>
 
@@ -29,6 +30,8 @@
         </nav>
     </header>
 
+    <div class="book-spread">
+    <div class="book-page">
     <main class="chapter-content" data-chapter="35">
         <h1 class="chapter-heading">Chapter 35</h1>
 
@@ -113,6 +116,8 @@
 <p>“Tomorrow a dusk, Marley Stonebender, if we can make a plan. Come, let’s put our heads together and figure out our options.”</p>
         </div>
     </main>
+    </div>
+    </div>
 
     <nav class="chapter-nav" aria-label="Chapter navigation">
         <a href="chapter-34.html" class="nav-prev">← Previous Chapter</a>
@@ -126,5 +131,6 @@
     </footer>
 
     <script src="../js/reader.js"></script>
+    <script src="../js/book-reader.js"></script>
 </body>
 </html>

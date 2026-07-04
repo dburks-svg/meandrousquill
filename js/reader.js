@@ -40,12 +40,19 @@
     saveProgress(progress);
   }
 
+  // ---- Mode awareness ----
+
+  function isBookMode() {
+    return document.body.classList.contains('book-view') &&
+           !document.body.classList.contains('scroll-mode');
+  }
+
   // ---- Restore scroll position ----
 
   if (chapterNum) {
     var p0 = getProgress();
     var saved = p0.scrollPositions[chapterNum];
-    if (saved && saved > 0) {
+    if (saved && saved > 0 && !isBookMode()) {
       requestAnimationFrame(function () {
         var docH = document.documentElement.scrollHeight - document.documentElement.clientHeight;
         window.scrollTo(0, saved * docH);
@@ -58,6 +65,7 @@
   if (chapterNum) {
     var scrollTimer = null;
     window.addEventListener('scroll', function () {
+      if (isBookMode()) return;
       if (scrollTimer) clearTimeout(scrollTimer);
       scrollTimer = setTimeout(function () {
         var top = window.pageYOffset || document.documentElement.scrollTop;
@@ -76,6 +84,7 @@
   if (bar) {
     var ticking = false;
     window.addEventListener('scroll', function () {
+      if (isBookMode()) return;
       if (!ticking) {
         requestAnimationFrame(function () {
           var top = window.pageYOffset || document.documentElement.scrollTop;
@@ -120,9 +129,10 @@
     bookmarkBtn.title = active ? 'Remove bookmark' : 'Bookmark this chapter';
   }
 
-  // ---- Keyboard Navigation (prev/next chapter) ----
+  // ---- Keyboard Navigation (prev/next chapter, scroll mode only) ----
 
   document.addEventListener('keydown', function (e) {
+    if (isBookMode()) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     if (e.key === 'ArrowLeft') {
       var prev = document.querySelector('.nav-prev:not(.hidden)');

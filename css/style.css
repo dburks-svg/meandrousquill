@@ -672,7 +672,7 @@ a:focus-visible {
   }
 }
 
-/* ---- Atmospheric Background ---- */
+/* ---- Atmospheric Background (scroll mode only, book-reader.css handles book mode) ---- */
 .chapter-content::before {
   content: '';
   position: fixed;
@@ -685,6 +685,10 @@ a:focus-visible {
   z-index: -1;
 }
 
+body.book-view .chapter-content::before {
+  display: none;
+}
+
 /* ---- Enhanced Chapter Heading ---- */
 .chapter-heading::before {
   content: '';
@@ -693,6 +697,18 @@ a:focus-visible {
   height: 1px;
   margin: 0 auto 1.5rem;
   background: linear-gradient(to right, transparent, var(--accent-ember), transparent);
+}
+
+body.book-view .chapter-heading::before {
+  display: none;
+}
+
+body.book-view .scene-break::before {
+  background: var(--parchment-base, #2a2218);
+}
+
+body.book-view .chapter-nav::before {
+  background: var(--parchment-base, #2a2218);
 }
 
 /* ---- Enhanced Chapter Navigation Footer ---- */
