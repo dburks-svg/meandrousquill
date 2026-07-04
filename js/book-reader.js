@@ -154,6 +154,60 @@
         return pages;
     }
 
+    // ---- Nav pages (chapter transitions) ----
+
+    function createNavPage(type) {
+        var page = document.createElement('div');
+        page.className = 'flip-page flip-page-nav';
+        page.setAttribute('data-nav', type);
+
+        var inner = document.createElement('div');
+        inner.className = 'flip-page-nav-content';
+        inner.style.cssText =
+            'position:absolute;left:0;top:0;width:100%;height:100%;' +
+            'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+            'padding:' + PAGE_PAD_TOP + 'px ' + PAGE_PAD_X + 'px ' + PAGE_PAD_BOTTOM + 'px;' +
+            'box-sizing:border-box;text-align:center;';
+
+        var heading = chapterContent.querySelector('.chapter-heading');
+        var chapterTitle = heading ? heading.textContent.trim() : 'Chapter ' + chapterNum;
+
+        if (type === 'next') {
+            var nextLink = document.querySelector('.chapter-nav .nav-next');
+            var nextNum = chapterNum < 48 ? chapterNum + 1 : null;
+            if (nextLink && nextNum) {
+                inner.innerHTML =
+                    '<div style="color:var(--text-secondary,#8a7a5a);font-size:0.85rem;margin-bottom:1.5rem;">End of</div>' +
+                    '<div style="font-family:Cinzel,serif;color:var(--accent-gold,#c9a84c);font-size:1.3rem;letter-spacing:0.08em;margin-bottom:2.5rem;">' + chapterTitle + '</div>' +
+                    '<div style="width:60px;height:1px;background:var(--accent-gold,#c9a84c);opacity:0.4;margin:0 auto 2.5rem;"></div>' +
+                    '<a href="' + nextLink.href + '" class="flip-nav-link" style="font-family:Cinzel,serif;color:var(--accent-gold,#c9a84c);font-size:1.1rem;text-decoration:none;letter-spacing:0.06em;padding:0.8rem 2rem;border:1px solid rgba(201,168,76,0.3);border-radius:4px;transition:all 0.3s;"' +
+                    ' onmouseenter="this.style.borderColor=\'rgba(201,168,76,0.6)\';this.style.background=\'rgba(201,168,76,0.08)\'"' +
+                    ' onmouseleave="this.style.borderColor=\'rgba(201,168,76,0.3)\';this.style.background=\'none\'">' +
+                    'Continue to Chapter ' + nextNum + ' →</a>';
+            } else {
+                inner.innerHTML =
+                    '<div style="font-family:Cinzel,serif;color:var(--accent-gold,#c9a84c);font-size:1.3rem;letter-spacing:0.08em;margin-bottom:2rem;">The End</div>' +
+                    '<div style="width:60px;height:1px;background:var(--accent-gold,#c9a84c);opacity:0.4;margin:0 auto 2rem;"></div>' +
+                    '<div style="color:var(--text-secondary,#8a7a5a);font-size:0.9rem;line-height:1.8;max-width:280px;">' +
+                    'Thank you for reading<br>Dragon\'s Eggs and Spirit Stones<br>by Deborah Burks</div>';
+            }
+        } else if (type === 'prev') {
+            var prevLink = document.querySelector('.chapter-nav .nav-prev');
+            if (prevLink && prevLink.href && chapterNum > 1) {
+                inner.innerHTML =
+                    '<a href="' + prevLink.href + '" class="flip-nav-link" style="font-family:Cinzel,serif;color:var(--accent-gold,#c9a84c);font-size:1rem;text-decoration:none;letter-spacing:0.06em;padding:0.8rem 2rem;border:1px solid rgba(201,168,76,0.3);border-radius:4px;transition:all 0.3s;"' +
+                    ' onmouseenter="this.style.borderColor=\'rgba(201,168,76,0.6)\';this.style.background=\'rgba(201,168,76,0.08)\'"' +
+                    ' onmouseleave="this.style.borderColor=\'rgba(201,168,76,0.3)\';this.style.background=\'none\'">' +
+                    '← Chapter ' + (chapterNum - 1) + '</a>' +
+                    '<div style="width:60px;height:1px;background:var(--accent-gold,#c9a84c);opacity:0.4;margin:2.5rem auto;"></div>' +
+                    '<div style="font-family:Cinzel,serif;color:var(--accent-gold,#c9a84c);font-size:1.3rem;letter-spacing:0.08em;">' + chapterTitle + '</div>';
+            }
+        }
+
+        page.appendChild(inner);
+        return page;
+    }
+
     // ---- StPageFlip initialization ----
 
     function initFlipbook() {
@@ -191,6 +245,21 @@
         var totalPages = measurePages(text.w, text.h);
         var pages = createPageElements(totalPages, pageW, pageH);
 
+        // Add nav pages for chapter flow
+        var prevLink = document.querySelector('.chapter-nav .nav-prev');
+        if (prevLink && prevLink.href && chapterNum > 1) {
+            pages.unshift(createNavPage('prev'));
+        }
+        pages.push(createNavPage('next'));
+        // Pad to even count for two-page spreads
+        if (pages.length % 2 !== 0) {
+            var blank = document.createElement('div');
+            blank.className = 'flip-page flip-page-blank';
+            pages.push(blank);
+        }
+
+        var contentPageCount = totalPages;
+
         flipContainer = document.createElement('div');
         flipContainer.id = 'flipbook-container';
         chapterContent.appendChild(flipContainer);
@@ -225,18 +294,18 @@
         pageFlipInstance.loadFromHTML(document.querySelectorAll('#flipbook-container .flip-page'));
 
         var savedPage = getSavedPage();
-        if (savedPage > 0 && savedPage < totalPages) {
+        if (savedPage > 0 && savedPage < contentPageCount) {
             pageFlipInstance.turnToPage(savedPage);
         }
 
         pageFlipInstance.on('flip', function (e) {
             var page = e.data;
-            updateProgressBar(page, totalPages);
-            savePagePosition(page, totalPages);
-            announce(page, totalPages);
+            updateProgressBar(page, contentPageCount);
+            savePagePosition(page, contentPageCount);
+            announce(page, contentPageCount);
         });
 
-        updateProgressBar(pageFlipInstance.getCurrentPageIndex(), totalPages);
+        updateProgressBar(pageFlipInstance.getCurrentPageIndex(), contentPageCount);
         createModeToggle();
     }
 
@@ -314,43 +383,16 @@
 
         if (e.key === 'ArrowRight' || e.key === 'PageDown') {
             e.preventDefault();
-            var current = pageFlipInstance.getCurrentPageIndex();
-            var total = pageFlipInstance.getPageCount();
-            if (current >= total - 2) {
-                goToNextChapter();
-            } else {
-                pageFlipInstance.flipNext();
-            }
+            pageFlipInstance.flipNext();
         } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
             e.preventDefault();
-            var currentP = pageFlipInstance.getCurrentPageIndex();
-            if (currentP <= 0) {
-                goToPrevChapter();
-            } else {
-                pageFlipInstance.flipPrev();
-            }
+            pageFlipInstance.flipPrev();
         } else if (e.key === 'Home') {
             e.preventDefault();
             pageFlipInstance.turnToPage(0);
         } else if (e.key === 'End') {
             e.preventDefault();
             pageFlipInstance.turnToPage(pageFlipInstance.getPageCount() - 1);
-        }
-    }
-
-    // ---- Chapter nav ----
-
-    function goToNextChapter() {
-        var nextLink = document.querySelector('.chapter-nav .nav-next');
-        if (nextLink && nextLink.href) {
-            window.location.href = nextLink.href;
-        }
-    }
-
-    function goToPrevChapter() {
-        var prevLink = document.querySelector('.chapter-nav .nav-prev');
-        if (prevLink && prevLink.href) {
-            window.location.href = prevLink.href;
         }
     }
 
